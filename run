@@ -1,0 +1,4 @@
+#!/bin/bash -l
+source /home/pi/environments/flask-env/bin/activate
+python3 -m gunicorn --bind 0.0.0.0:8080 --timeout 40 --chdir /home/pi/Documents/CL-Controller wsgi:app
+

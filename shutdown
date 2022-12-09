@@ -1,0 +1,20 @@
+#!/bin/bash
+port=8080
+pid=`ps ax | grep gunicorn | grep $port | awk '{split($0,a," "); print a[1]}' | head -n 1`
+# echo "PID: $pid"
+if [ -z "$pid" ]; then
+	echo "Error: cannot find gunicorn pid"
+else
+	if [ "$1" == "shutdown" ]; then
+		echo "shutdown"
+		bash -c "sleep 3; kill $pid; sleep 5; shutdown now" &
+	elif [ "$1" == "reboot" ]; then
+		echo "reboot"
+		bash -c "sleep 3; kill $pid; sleep 5; shutdown --reboot now"&
+	elif [ "$1" == "kill" ]; then
+		echo "kill"
+		bash -c "sleep 3; kill $pid" &
+	else
+		echo "Error: unknown option"
+	fi
+fi
