@@ -27,7 +27,7 @@ Made by me. Nothing is guaranteed. If you follow these steps, your tree (probabl
 
 1. Put the LEDs in the tree. Make sure they are distributed evenly!
 2. Connect all the components according to this schematic. The component on the very left is the PSU, the one in the top middle is the relay.
-![circuit](circuit.svg)
+![documents/circuit](documents/circuit.svg)
 
 ### The rest
 Now comes the fun part.

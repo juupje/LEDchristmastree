@@ -1,1 +1,5 @@
 __pycache__
+*.cddx
+*.png
+images/
+stuff.txt
