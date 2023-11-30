@@ -6,4 +6,6 @@ Commandline bluetooth:
 
 Flask HTTPS:
 	https://dev.to/chand1012/how-to-host-a-flask-server-with-gunicorn-and-https-942
+	-> nginx stored at /etc/nginx
+
 	

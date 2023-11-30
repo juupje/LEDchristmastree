@@ -61,7 +61,7 @@ class Music(Animation):
             return
         self.last_update = time()
         def callback(colors):
-            for i, section in enumerate(self.sections):
+            for i, section in enumerate(self.sections): 
                 for idx in section:
                     self.strip.setPixelColor(idx, int(colors[i]))
             self.strip.show()

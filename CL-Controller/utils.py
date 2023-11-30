@@ -34,6 +34,22 @@ def parseColor(color, brightness=255):
         return color_brightness(r, g, b, brightness)
     return Color(0,0,0)
 
+def to_double_digit_hex(i):
+    s = hex(i)[2:].rstrip("L")
+    if(len(s)==1):
+        return "0"+s
+    elif(len(s)==0):
+        return "00"
+    return s
+
+def rgb_to_hex(color):
+    if(search(regex, color)):
+        colors = color.split(",")
+        r = clamp(int(colors[0]), 0, 255)
+        g = clamp(int(colors[1]), 0, 255)
+        b = clamp(int(colors[2]), 0, 255)
+        return "#"+to_double_digit_hex(r) + to_double_digit_hex(g) + to_double_digit_hex(b)
+    return "#000000"
 
 def adjustBrightness(color, brightness):
     brightness = clamp(brightness, 0, 255)

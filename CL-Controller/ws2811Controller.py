@@ -93,7 +93,6 @@ class Controller:
 
     def update_all(self, instructions, show=False):
         self.stop_animation()
-        print("Update all: ")
         succ = True
         for instruction in instructions:
             if not self.update(instruction, False):
@@ -106,10 +105,10 @@ class Controller:
     def update(self, instruction, show=False):
         self.stop_animation()
         led_id = instruction["id"]
-        print(f"UPDATE led {led_id:d}: ", instruction)
+        #print(f"UPDATE led {led_id:d}: ", instruction)
         if(instruction["state"]):
             color = utils.parseColor(instruction["color"], instruction["brightness"])
-            print("Set color to: ", color)
+            #print("Set color to: ", color)
             self.strip.setPixelColor(led_id, color)
         else:
             self.strip.setPixelColor(led_id, utils.Color(0,0,0))
@@ -141,6 +140,7 @@ class Controller:
         self.uniform_color(Color(0,0,0))
         colors = [Color(255,0,0), Color(0,255,0), Color(0,0,255)]
         N = self.strip.numPixels()
+        '''
         for i in range(3):
             self.strip.setPixelColor(i, colors[i])
             self.show()
@@ -156,6 +156,7 @@ class Controller:
             self.strip.setPixelColor(i-3, 0)
             self.show()
             time.sleep(0.04)
+        '''
         print("Startup complete!")
 
         for led in data:
@@ -182,5 +183,5 @@ class Controller:
         self.animation.play(self.strip)
 
     def show(self):
-        print("Showing!")
+        #print("Showing!")
         self.strip.show()

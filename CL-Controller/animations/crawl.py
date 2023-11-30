@@ -12,14 +12,14 @@ class Node:
         self.led_id = led_id
         self.edges = []
     
-    def add_edge(self, edge):
-        self.edges.append(edge)
-
-class Edge:
-    def __init__(self, A : Node, B : Node, weight : float):
-        self.A = A
-        self.B = B
-        self.weight = weight
+    def set_connections(self, nodes, weights):
+        assert(nodes.shape==weights.shape)
+        self.neighbours = nodes
+        self.weights = weights
+    
+    def unit_to(self, other : 'Node'):
+        vec = other.location-self.location
+        return vec/np.sum(vec)
 
 class LEDState:
     def __init__(self, color=0, fade=0):
@@ -47,17 +47,22 @@ class LEDState:
             self.b = int(self.b*f)
 
 class Snowball:
-    def __init__(self, idx, radius, z, phi, theta, speed, fade):
+    def __init__(self, idx :int, radius : float, node : Node, mass : float, speed : float, fade):
         self.idx = idx
         self.radius2 = radius*radius
-        self.phi = phi
-        self.z = z
-        self.speed = speed
-        self.sintheta = np.sin(theta)
-        self.costheta = np.cos(theta)
-        self.a = self.sintheta/self.costheta
-        self.r = 0
+        self.node = node
+        self.mass = mass
         self.fade = fade
+        self.speed = speed
+        #find the nearest neighbor and make the velocity points that way
+        nn = self.node.neighbours[np.argmax(self.node.weights)]
+        self.velocity = self.node.unit_to(nn)*self.speed
+        self.location = node.location
+
+    def find_next(self):
+        weights = self.node.weights
+        #construct unit vectors
+        
 
     #locs = (r, phi, theta)
     def update(self, states, locs, color):
@@ -69,8 +74,6 @@ class Snowball:
         x,y = to_cartesian(self.r, self.phi)
         #for i in np.where(locs[0]*locs[0]+self.r*self.r-2*self.r*locs[0]*(self.sintheta*np.sin(locs[2])*np.cos(locs[1]-self.phi)+self.costheta*np.cos(locs[2]))<self.radius2)[0]:
         for i in np.where((x-locs[:,0])**2+(y-locs[:,1])**2+(self.z-locs[:,2])**2<self.radius2)[0]:
-            #print(i, color(self.z, max_z, self.idx), type(color(self.z, max_z, self.idx)))
-            #strip.setPixelColor(int(i), color(self.z, max_z, self.idx))
             states[i].set_color(color(self.z, max_z, self.idx), fade=self.fade)
 
     def __str__(self):
@@ -145,14 +148,19 @@ class Crawl(Animation):
         self.nodes = [Node(self.locs[i], i) for i in range(len(self.locs))]
         #build neighborhoods
         # calculate distance matrix
-        
+        X = self.locs #(N,3)
+        X2 = np.sum(X*X, axis=1, keepdims=True) #(N,1)
+        D = X2-2*np.matmul(X,X.T)+X2.T
+
         # get k-nearest-neighbors
+        idx = np.argsort(D, axis=1)[:, :-10:-1]
 
         # add create edges and add them to this node
-
-        max_z = self.top = np.max(z)+self.radius+self.randomness
-        self.bottom = np.min(z)-2*self.radius
-        #we want 30fp, travel up in [duration] number of seconds: step_size = distance/#steps
+        for i in range(len(self.nodes)):
+            nearest_neighbors = idx[i,:]
+            weights = D[i, nearest_neighbors]
+            weights = weights/np.sum(weights)
+            self.nodes[i].set_connections(nearest_neighbors, weights)
         
         self.color = utils.parseColorMode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255))
         if(self.color is None):
@@ -160,8 +168,6 @@ class Crawl(Animation):
             return {"success": False, "message": "Invalid color"}
 
         self.background = utils.parseColor(kwargs.get("background", "255,0,0"), brightness=kwargs.get("back_brightness", 255))
-
-        #self.locs = (z, phi, r)
         self._is_setup = True
         return {"success": True}
 

@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import werkzeug
-werkzeug.cached_property = werkzeug.utils.cached_property
-from flask import Flask
-from flask_restplus import Api, Resource, fields
+from flask import Flask, render_template, request
+from flask_restx import Api, Resource, fields
 from ws2811Controller import Controller
 from animations import animations as anim
 import subprocess
 import os
 import io
+import webcontroller
+import importlib
 
 # LED strip configuration:
 LED_COUNT = 100        # Number of LED pixels.
@@ -20,12 +21,12 @@ LED_CHANNEL = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
 controller = Controller(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 
 api = Api(app, version="1.0", title="CL-Controller", description="A RESTful API to control a christmas tree's lighting",
           doc="/docs")
 
-ns = api.namespace('leds', description="LED related operations")
+ns_leds = api.namespace('leds', description="LED related operations")
 ns_all = api.namespace('all', description="Global LED operations")
 ns_anim = api.namespace('anim', description="Animation related operations")
 ns_rpi = api.namespace('rpi', description="Raspberry Pi related operations")
@@ -87,37 +88,43 @@ class LEDUtil(object):
         else:
             led = backup
             return {"success": False, "message": ""}
+            
+@app.route("/home", strict_slashes=False)
+def webpage():
+    importlib.reload(webcontroller)
+    return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str))
 
 @ns_all.route("/")
 class ApplyAll(Resource):
-    @ns.marshal_list_with(leds_model)
+    @ns_all.marshal_list_with(leds_model)
     def get(self):
+        print("Got get request! /all/")
         return led_util.leds
     
     @ns_all.expect(all_model)
     def post(self):
         return led_util.update_all(api.payload)
 
-@ns.route("/")
+@ns_leds.route("/")
 class LedList(Resource):
-    @ns.marshal_list_with(leds_model)
+    @ns_leds.marshal_list_with(leds_model)
     def get(self):
         return led_util.leds
     
-    @ns.expect(leds_model)
+    @ns_leds.expect(leds_model)
     def patch(self):
         return led_util.update(api.payload)
     
-@ns.route("/<int:led_id>")
-@ns.response(404, 'LED not found')
-@ns.param('led_id', 'The LED identifier')
+@ns_leds.route("/<int:led_id>")
+@ns_leds.response(404, 'LED not found')
+@ns_leds.param('led_id', 'The LED identifier')
 class LED(Resource):
     
-    @ns.marshal_with(leds_model)
+    @ns_leds.marshal_with(leds_model)
     def get(self, led_id):
         return led_util.get(led_id)
         
-    @ns.expect(leds_model)
+    @ns_leds.expect(leds_model)
     def patch(self, led_id):
         """
         Partial update of a given led
@@ -131,6 +138,7 @@ class AnimList(Resource):
 
     def post(self):
         data = api.payload
+        #print(data)
         if("name" in data):
             animation = anim.get(data["name"])
             if(animation is not None):

@@ -1,0 +1,347 @@
+.header-row { border-bottom: 1px solid #ccc; }
+table td:nth-child(1) {white-space: nowrap; width: 1%; font-size: 1.5em;}
+table .output {
+    width: 60px;
+    font-size: 1.1em;
+}
+table td:nth-child(2) {padding-left: 5%; padding-right: 5%;}
+
+table {
+    width: 100%;
+}
+
+.section {
+    margin-bottom: 3em;
+}
+
+#main-content {
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+@media only screen and (min-width: 600px) {
+    #main-content {
+        width: 50%;
+    }
+}
+
+/* ======= animations ======= */
+#anim_list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+#anim_list > li {
+    position: relative;
+    padding-left: 5%;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    margin: 2px;
+    border: 1px solid #aaa;
+    background-color: rgb(198, 234, 255);
+    border-radius: 10px;
+    width: 100%;
+    cursor: pointer;
+}
+
+#anim_list a:link, #anim_list a:visited {
+    text-decoration: none;
+    color: black;
+}
+
+#anim_list .anim_name {
+    font-weight: bold;
+    font-size: 1.3em;
+}
+
+/* ======= slider ========= */
+
+.slider-cell {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+/* The slider itself */
+.slider {
+    width: 100%;
+    height: 15px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+  
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+  
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    border-radius: 50%;
+    background: #04AA6D; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+  
+.slider::-moz-range-thumb {
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    border-radius: 50%;
+    background: #04AA6D; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+} 
+
+/* ====== toggle switch ====== */
+
+input[type=checkbox]{
+    height: 0;
+    width: 0;
+    visibility: hidden;
+}
+  
+.toggle-switch-label {
+    float: right;
+    cursor: pointer;
+    text-indent: -9999px;
+    width: 80px;
+    height: 30px;
+    background: grey;
+    display: block;
+    border-radius: 30px;
+    position: relative;
+}
+
+.toggle-switch-label:after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 20px;
+    transition: 0.3s;
+}
+
+.toggle-switch:checked + .toggle-switch-label {
+    background: #bada55;
+}
+
+.toggle-switch:checked + .toggle-switch-label:after {
+    left: calc(100% - 5px);
+    transform: translateX(-100%);
+}
+
+.toggle-switch-label:active:after {
+    width: 30px;
+}
+
+/* ====== color ====== */
+input[type=color] {
+    margin: 0.4rem;
+    float: right;
+}
+
+/* ======= Button ====== */
+.center-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.controller {
+    font-size: 1.5em;
+    text-align: center;
+    align-content: center;
+}
+
+.table-btn, .controller button {
+    max-width: 10em;
+    appearance: button;
+    backface-visibility: hidden;
+    background-color: #405cf5;
+    border-radius: 6px;
+    border-width: 0;
+    box-shadow: rgba(50, 50, 93, .1) 0 0 0 1px inset,rgba(50, 50, 93, .1) 0 2px 5px 0,rgba(0, 0, 0, .07) 0 1px 1px 0;
+    box-sizing: border-box;
+    color: #fff;
+    cursor: pointer;
+    font-family: -apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif;
+    font-size: 100%;
+    height: 44px;
+    line-height: 1.15;
+    margin: 12px 0 0;
+    outline: none;
+    overflow: hidden;
+    padding: 0 25px;
+    position: relative;
+    text-align: center;
+    text-transform: none;
+    transform: translateZ(0);
+    transition: all .2s,box-shadow .08s ease-in;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    width: 100%;
+}
+
+.table-btn:disabled {
+  cursor: default;
+}
+
+.table-btn:focus {
+  box-shadow: rgba(50, 50, 93, .1) 0 0 0 1px inset, rgba(50, 50, 93, .2) 0 6px 15px 0, rgba(0, 0, 0, .1) 0 2px 2px 0, rgba(50, 151, 211, .3) 0 0 0 4px;
+}
+
+/* ======== drop down ======= */
+
+.drop-down_container {
+    display: flex;
+    justify-content: right;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+}
+
+.drop-down_container * {
+    padding:0;
+    margin: 0;
+    position:relative;
+    font-weight: normal;
+}
+
+.drop-down {
+    position: relative;
+	width: 200px;
+	height: 30px;
+	cursor: pointer;
+	background-color: white;
+	box-shadow: 0 2px 0 white;
+	border-radius: 2px;
+    list-style: none;
+}
+.drop-down input {
+    margin: 0;
+    appearance: none;
+}
+.drop-down ul {
+    list-style: none;
+}
+
+.drop-down_expand {
+    width: 0;
+    height: 30px;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.drop-down_options {
+    height: 0;
+}
+
+/* arrow down */
+.drop-down_expand::after {
+    content: '\003E';
+    position: absolute;
+    top: 40%;
+    right: 0;
+    transform: translate(-50%, -50%) rotate(90deg) scaleY(1.75);
+    color: #3e3e3e;
+    font-size: 28px;
+    pointer-events: none;
+    z-index: 2;
+    transition: all 250ms cubic-bezier(.4,.25,.3,1);
+    opacity: .6;
+}
+		
+.drop-down_exand:hover::after {opacity: 1}
+
+/* transform arrow to point up */
+.drop-down_expand:checked::after {transform: translate(-50%, -50%) rotate(90deg) scaleX(-1) scaleY(1.75);}
+
+.drop-down_expand_label {
+    display: block;
+    width: 100%;
+    height: 30px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+}
+	
+.drop-down_close {display: none}
+	
+.drop-down_close_label {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: none;
+}
+	
+.drop-down_items {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 0;
+    border: 2px solid #2fb5d1;
+    border-radius: 2px;
+    padding-top: 30px;
+}
+	
+.drop-down_input {display: none}
+	
+.drop-down_label {
+    transition: all 250ms cubic-bezier(.4,.25,.3,1);
+    display: block;
+    height: 0;
+    font-size: 1.6rem;
+    line-height: 30px;
+    overflow: hidden;
+    color: #3e3e3e;
+    background-color: #fff;
+    cursor: pointer;
+    padding-left: 20px;
+}
+.drop-down_placeholder {
+    height:30px;
+    vertical-align: middle;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: .6;
+    background-color: transparent;
+}
+	
+.drop-down_expand:checked + .drop-down_close_label {display: block;}
+
+.drop-down_expand:checked +
+.drop-down_close_label +
+.drop-down_options
+.drop-down_label {
+    height: 30px;
+    z-index:999;
+}
+
+.drop-down_expand:checked +
+.drop-down_close_label +
+.drop-down_options
+.drop-down_label:hover {background-color: #f7f7f7}
+
+.drop-down_expand:checked +
+.drop-down_close_label +
+.drop-down_options +
+.drop-down_expand_label {display: none}
+
+.drop-down_input:checked + .drop-down_label {
+    height: 30px;
+    margin-top: -30px;
+}

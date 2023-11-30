@@ -8,7 +8,7 @@ class Rotate(Animation):
         "settings": ["color", "duration", "brightness", "invert"],
         "color": {
             "type": "color",
-            "default": "255,0,0",
+            "default": "fixed",
             "presets": ["fixed", "rainbow"],
         },
         "duration": {

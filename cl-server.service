@@ -1,0 +1,18 @@
+[Unit]
+Description=Christmas Lights controller
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+User=root
+Type=simple
+ExecStart=/home/pi/Documents/CL-Controller/run
+TimeoutSec=30
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=300
+StartLimitBurst=10
+
+[Install]
+WantedBy=multi-user.target

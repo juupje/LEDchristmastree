@@ -7,10 +7,10 @@ if [ -z "$pid" ]; then
 else
 	if [ "$1" == "shutdown" ]; then
 		echo "shutdown"
-		bash -c "sleep 3; kill $pid; sleep 5; shutdown now" &
+		bash -c "sleep 5; shutdown now" &
 	elif [ "$1" == "reboot" ]; then
 		echo "reboot"
-		bash -c "sleep 3; kill $pid; sleep 5; shutdown --reboot now"&
+		bash -c "shutdown --reboot now"&
 	elif [ "$1" == "kill" ]; then
 		echo "kill"
 		bash -c "sleep 3; kill $pid" &
