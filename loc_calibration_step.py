@@ -128,7 +128,7 @@ def main():
     cam.set(11, contrast)
     cam.set(12, saturation)
 
-    rest_url = "http://raspberrypi.local:5000"
+    rest_url = "http://raspberrypi4.local:8080"
     
     #first, turn all leds off
     response = requests.post(rest_url+"/all/", json={"power": True})

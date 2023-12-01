@@ -1,4 +1,4 @@
 #!/bin/bash
-curl -v -d @$1 -H "Content-Type: application/json" raspberrypi.local:5000/all/
+curl -v -d @$1 -H "Content-Type: application/json" raspberrypi4.local:8080/all/
 echo "\n"
 

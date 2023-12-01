@@ -55,15 +55,15 @@ A window with a vertical bar in the middle should pop up. Make sure the center o
 Now, turn off the lights (and dim the PC screen if necessary to reduce reflecting light and to protect your eyes). Run
 
 ```bash
-python3 led_iterator.py 0
+python3 loc_calibration_step.py 0
 ```
 and wait for it to be done. Then turn the tree to the next mark (45 degrees) and run
 ```bash
-python3 led_iterator.py 45
+python3 loc_calibration_step.py 45
 ```
 Continue doing this until you're back at the start (don't do the 360 degrees. That is just confusing and might lead to errors in the calculation). Finally, run
 ```bash
-python3 loc_finder.py
+python3 compute_calibration.py
 ```
 This will calculate the 3D coordinates of all LEDs based on the webcam input of the previous steps. This step might require a substantial amount of fine-tuning (see the sections marked for hardcoding in the script.). Play with it until you are satisfied.
 
