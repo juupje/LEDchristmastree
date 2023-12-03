@@ -3,4 +3,6 @@ __pycache__
 *.cddx
 *.png
 images/
+locations/
 stuff.txt
+*.npy

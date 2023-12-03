@@ -6,10 +6,9 @@ import queue, threading
 import numpy as np
 from math import ceil, floor
 import requests
+import argparse
+import os, shutil
 
-show = True
-
-rotation = 315
 num_leds = 100
 
 brightness = 50
@@ -66,7 +65,7 @@ def _collect_cluster(i, j, x, visited, r=1.45):
 
 def find_clusters(x):
     clusters = []
-    visited = np.zeros(x.shape, dtype=np.bool)
+    visited = np.zeros(x.shape, dtype=bool)
     for i in range(x.shape[0]):
         for j in range(x.shape[1]):
             if(visited[i,j]): continue
@@ -96,7 +95,7 @@ def process_image(img):
     for i in np.argsort(sizes)[::-1]:
         cluster = clusters[i]
         c, r = min_enclosing_circle(cluster)
-        if(r<2.5):
+        if(r<2):
             continue
         circularity = cluster.shape[0]/(np.pi*(r**2))
         if(circularity>0.3):
@@ -110,7 +109,10 @@ def process_image(img):
         return c, r, binary
     return None, None, binary
 
-def main():
+def main(show:bool=True, rotation:int=0, leds:int=None):
+    for x in ["raw", "filtered", "processed"]:
+        os.makedirs(f"images/{x}/{rotation:d}", exist_ok=True)
+
     cam = cv.VideoCapture(0)
     reader = CamReader(cam)
     #t = threading.Thread(target=lambda: reader(cam))
@@ -144,7 +146,8 @@ def main():
     stop = False
     
     locs = np.full((num_leds,2), -1, dtype=np.int32)
-    for i in range(num_leds):
+    to_iter = leds or range(num_leds)
+    for i in to_iter:
         post_request["id"] = i #select the next led
         post_request["state"] = True #turn it on
         count = 0
@@ -167,9 +170,9 @@ def main():
                 if(show):
                     cv.imshow("cam-processed", copy)
                     cv.imshow("cam-binary", binary)
-                cv.imwrite(f"images/{rotation:d}/raw_{i:d}.jpg", img) #save the image to check
-                cv.imwrite(f"images/{rotation:d}/filtered_{i:d}.jpg", binary) #save the image to check
-                cv.imwrite(f"images/{rotation:d}/processed_{i:d}.jpg", copy) #save the image to check
+                cv.imwrite(f"images/raw/{rotation:d}/{i:d}.jpg", img) #save the image to check
+                cv.imwrite(f"images/filtered/{rotation:d}/{i:d}.jpg", binary) #save the image to check
+                cv.imwrite(f"images/processed/{rotation:d}/{i:d}.jpg", copy) #save the image to check
                 if(cv.waitKey(1)==27):
                     stop = True
                     break
@@ -197,7 +200,19 @@ def main():
             stop = True
         if(stop):
             break
-    np.save(f"locations_{rotation:d}.npy", locs)
+    file = f"locations/locations_{rotation:d}.npy"
+    if(leds is None):
+        np.save(file, locs)
+    else:
+        #overwrite the existing file
+        if(os.path.exists(file)):
+            shutil.copyfile(file, file.replace(".npy", "_old.npy"))
+            old_locs = np.load(file)
+            old_locs[leds,:] = locs[leds,:]
+            print(old_locs)
+            np.save(file, old_locs)
+        else:
+            np.save(file, locs)
     if(show):
         cv.destroyWindow("cam-processed")
         cv.destroyWindow("cam-binary")
@@ -209,5 +224,14 @@ def main():
     if(response.status_code!=200):
         print("Failed to turn off power...")
     
-if __name__=="__main__":    
-    main()
+if __name__=="__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("angle", help="Rotation angle of tree", type=int)
+    parser.add_argument("--ids", "-i", help="ID of LED", type=int, nargs="+")
+    parser.add_argument("--no-show", help="Do not show camera windows", action='store_true')
+    args = vars(parser.parse_args())
+
+    if not os.path.exists("locations"):
+        os.mkdir("locations")
+    
+    main(show=not args["no_show"], rotation=args["angle"], leds=args["ids"])

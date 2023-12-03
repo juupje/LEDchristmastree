@@ -7,7 +7,7 @@ N_steps = 8
 delta_phi = 360//N_steps
 
 angles = [i*delta_phi for i in range(N_steps)]
-locs = np.array([np.load(f"locations_{i*delta_phi:d}.npy") for i in range(N_steps)], dtype=np.float32)
+locs = np.array([np.load(f"locations/locations_{i*delta_phi:d}.npy") for i in range(N_steps)], dtype=np.float32)
 print(locs.shape)
 """ Removing images with wrong tagging """
 
@@ -37,12 +37,14 @@ def find_max(x):
             idx = i
     return idx, m
 
+""" Hard coding start """
+locs[5,3,:] = np.array([381,219])
+""" Hard coding end """
+
 zs = np.stack([locs[i,:,0] for i in range(len(locs))]).astype(np.float32)
 zs[zs==-1] = np.NaN
 
-""" Hard coding start """
-#zs[2,42] = zs[2,18]
-""" Hard coding end """
+print("All nan ids:", np.where(np.isnan(zs).all(axis=0))[0])
 
 z = np.nanmean(zs,axis=0)
 
@@ -73,15 +75,12 @@ M = np.concatenate((np.cos(angles), -np.sin(angles)), axis=1)
 res = np.zeros((N))
 for i in range(N):
     idx = np.isnan(x[:,i])
-    pos, r, _, _ = np.linalg.lstsq(M[~idx,:], x[~idx,i])
+    pos, r, _, _ = np.linalg.lstsq(M[~idx,:], x[~idx,i],rcond=None)
     output[i,:2] = pos*w/2
     if(r.shape==(1,)):
         res[i] = r[0]
         
 """ Hard coding """
-output[77,1] = output[81,1]
-output[25,0] = output[24,0]
-output[25,1] = output[26,1]
 
 """ End """
         
