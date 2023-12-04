@@ -30,9 +30,15 @@ function send_data(method, url, data) {
                 alert("Got error: " + xhr.status);
             }
             let response = JSON.parse(xhr.responseText);
-            if(response["success"] == true)
-                alert("Succes!");
-            else
+            if(response["success"] == true) {
+                let box = document.getElementById("popup");
+                let content = box.children[0];
+                content.innerHTML = "success!";
+                box.classList.remove("hide-popup");
+                setTimeout(() => {
+                    box.classList.add("hide-popup");
+                }, 1000);
+            } else
                 alert("Er ging iets mis...\n" + response["message"]);
         }
     }

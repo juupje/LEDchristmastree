@@ -345,3 +345,22 @@ input[type=color] {
     height: 30px;
     margin-top: -30px;
 }
+
+#popup {
+    position: fixed;
+    bottom: 5%;
+    right: 5%;
+    margin: auto;
+    background: #00ff00;
+    border-radius: 20px;
+    transition: all 0.15s ease-in-out;
+    width: 25%;
+    min-width: 600px;
+    opacity: 1;
+    text-align:center;
+    padding: 10px;
+}
+
+#popup.hide-popup {
+    opacity: 0;
+}
