@@ -37,8 +37,8 @@ Now comes the fun part.
 
 2. Copy the [CL-Controller](CL-Controller/) folder to the Documents folder (or wherever you want it, I don't care. Just make sure to edit the necessary paths in the service files).
 3. Edit the [CL-Controller/run](CL-Controller/run) script. Change the paths in the third line and activate the correct python environment in the second line.
-4. Copy [cl-server.service](cl-server.service) to `/lib/systemd/system`.
-5. Activate the service through `systemd enable cl-server.service`
+4. Copy [cl-server.service](cl-server.service) to `/etc/systemd/system`.
+5. Activate the service through `sudo systemctl enable cl-server.service`
 6. Lights turn on?
 
 #### 2. Calibrating the LEDs

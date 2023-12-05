@@ -96,9 +96,12 @@ function rpi_command(key_name, value, url) {
                 alert("Got error: " + xhr.status);
             }
             let response = JSON.parse(xhr.responseText);
-            if(response["success"] == true)
-                alert("Succes!");
-            else
+            if(response["success"] == true) {
+                let box = document.getElementById("popup");
+                let content = box.children[0];
+                content.innerHTML = "success!";
+                box.classList.remove("hide-popup");
+            } else
                 alert("Er ging iets mis...\n" + response["message"]);
         }
     }
