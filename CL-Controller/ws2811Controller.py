@@ -5,74 +5,40 @@
 # Direct port of the Arduino NeoPixel library strandtest example.  Showcases
 # various animations on a strip of NeoPixels.
 
-import time
+import time, random
 from rpi_ws281x import PixelStrip
 import utils
 import RPi.GPIO as GPIO
+from multiprocessing import Lock
 GPIO.setmode(GPIO.BCM)
 
 Color = utils.Color
 
 SWITCH_PIN = 25 #GPIO in BCM channel
 
-# Define functions which animate LEDs in various ways.
-def colorWipe(strip, color, wait_ms=50):
-    """Wipe color across display a pixel at a time."""
-    for i in range(strip.numPixels()):
-        strip.setPixelColor(i, color)
-        strip.show()
-        time.sleep(wait_ms / 1000.0)
+class ws2811Controller:
+    _instance = None
+    _lock = Lock()
 
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None: 
+            cls._lock.acquire()
+            # Another thread could have created the instance
+            # before we acquired the lock. So check that the
+            # instance is still nonexistent.
+            if not cls._instance:
+                cls._instance = super().__new__(cls)
+                cls._instance.initialize(*args, **kwargs)
+            cls._lock.release()
+        return cls._instance
 
-def theaterChase(strip, color, wait_ms=50, iterations=10):
-    """Movie theater light style chaser animation."""
-    for j in range(iterations):
-        for q in range(3):
-            for i in range(0, strip.numPixels(), 3):
-                strip.setPixelColor(i + q, color)
-            strip.show()
-            time.sleep(wait_ms / 1000.0)
-            for i in range(0, strip.numPixels(), 3):
-                strip.setPixelColor(i + q, 0)
-
-
-def rainbow(strip, wait_ms=20, iterations=1):
-    """Draw rainbow that fades across all pixels at once."""
-    for j in range(256 * iterations):
-        for i in range(strip.numPixels()):
-            strip.setPixelColor(i, utils.wheel((i + j) & 255))
-        strip.show()
-        time.sleep(wait_ms / 1000.0)
-
-
-def rainbowCycle(strip, wait_ms=20, iterations=5):
-    """Draw rainbow that uniformly distributes itself across all pixels."""
-    for j in range(256 * iterations):
-        for i in range(strip.numPixels()):
-            strip.setPixelColor(i, utils.wheel(
-                (int(i * 256 / strip.numPixels()) + j) & 255))
-        strip.show()
-        time.sleep(wait_ms / 1000.0)
-
-
-def theaterChaseRainbow(strip, wait_ms=50):
-    """Rainbow movie theater light style chaser animation."""
-    for j in range(256):
-        for q in range(3):
-            for i in range(0, strip.numPixels(), 3):
-                strip.setPixelColor(i + q, utils.wheel((i + j) % 255))
-            strip.show()
-            time.sleep(wait_ms / 1000.0)
-            for i in range(0, strip.numPixels(), 3):
-                strip.setPixelColor(i + q, 0)
-
-class Controller:
-    def __init__(self, num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel):
-        print("INIT")
+    def initialize(self, num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel):
         GPIO.setup(SWITCH_PIN, GPIO.OUT)
         self.on = False
         self.animation = None
         GPIO.output(SWITCH_PIN, GPIO.LOW)
+        self.nonce = random.randint(0,2**15-1)
+        self.has_begun = False
         #self.strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
         self.strip = PixelStrip(num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel)       
 
@@ -105,10 +71,8 @@ class Controller:
     def update(self, instruction, show=False):
         self.stop_animation()
         led_id = instruction["id"]
-        #print(f"UPDATE led {led_id:d}: ", instruction)
         if(instruction["state"]):
             color = utils.parseColor(instruction["color"], instruction["brightness"])
-            #print("Set color to: ", color)
             self.strip.setPixelColor(led_id, color)
         else:
             self.strip.setPixelColor(led_id, utils.Color(0,0,0))
@@ -133,6 +97,7 @@ class Controller:
         self.show()
 
     def begin(self, data):
+        if(self.has_begun): return False
         if not self.on:
             self.turn_on()
         self.strip.begin()
@@ -140,7 +105,7 @@ class Controller:
         self.uniform_color(Color(0,0,0))
         colors = [Color(255,0,0), Color(0,255,0), Color(0,0,255)]
         N = self.strip.numPixels()
-        '''
+        
         for i in range(3):
             self.strip.setPixelColor(i, colors[i])
             self.show()
@@ -156,12 +121,14 @@ class Controller:
             self.strip.setPixelColor(i-3, 0)
             self.show()
             time.sleep(0.04)
-        '''
+        
         print("Startup complete!")
 
         for led in data:
             self.update(led)
         self.show()
+        self.has_begun = True
+        return True
 
     def led_count(self):
         return self.strip.numPixels()
@@ -185,3 +152,5 @@ class Controller:
     def show(self):
         #print("Showing!")
         self.strip.show()
+    def __str__(self):
+        return f"ws2811Controller [{self.nonce}]"

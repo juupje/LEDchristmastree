@@ -1,7 +1,6 @@
 import threading
 import numpy as np
 
-names = ["fade", "sweep_horiz", "sweep_vert", "rotate", "spiral", "sphere", "snow", "snake", "disco", "music", "disks"]
 info = {
     "fade": {
         "name": "Fade",
@@ -48,50 +47,63 @@ info = {
         "description": "Divide the tree into disks or stripes."
     }
 }
+names = list(info.keys())
 
 locations = None
+animation_file = "animations/locations.npy"
 def get_locations():
     global locations
     if(locations is None):
-        locations = np.load("animations/locations.npy")
+        locations = np.load(animation_file)
     return locations
 
-def get(name):
-    if(name=="sweep_vert"):
-        from animations import sweep
-        return sweep.Sweep_Vertical
-    elif(name=="sweep_horiz"):
-        from animations import sweep
-        return sweep.Sweep_Horizontal
-    elif(name=="rotate"):
-        from animations import rotate
-        return rotate.Rotate
-    elif(name=="spiral"):
-        from animations import spiral
-        return spiral.Spiral
-    elif(name=="sphere"):
-        from animations import sphere
-        return sphere.Sphere
-    elif(name=="snow"):
-        from animations import snow
-        return snow.Snow
-    elif(name=="snake"):
-        from animations import snake
-        return snake.Snake
-    elif(name=="disco"):
-        from animations import disco
-        return disco.Disco
-    elif(name=="fade"):
-        from animations import fade
-        return fade.Fade
-    elif(name=="disks"):
-        from animations import disks
-        return disks.Disks
-    elif(name=="music"):
-        from animations import music
-        return music.Music
-    else:
-        return None
+class AnimData:
+    def __init__(self,anim_file="animations/locations.npy", audio_enabled=False, video_enabled=False, **kwargs):
+        global names, info, animation_file
+        animation_file = anim_file
+        self.names = names.copy()
+        if not audio_enabled and "music" in self.names:
+            self.names.remove("music")
+        if not video_enabled and "camera" in self.names:
+            self.names.remove("camera")
+        self.info = {k: v for k,v in info.items() if k in self.names}
+
+    def get(self,name):
+        if(name=="sweep_vert"):
+            from animations import sweep
+            return sweep.Sweep_Vertical
+        elif(name=="sweep_horiz"):
+            from animations import sweep
+            return sweep.Sweep_Horizontal
+        elif(name=="rotate"):
+            from animations import rotate
+            return rotate.Rotate
+        elif(name=="spiral"):
+            from animations import spiral
+            return spiral.Spiral
+        elif(name=="sphere"):
+            from animations import sphere
+            return sphere.Sphere
+        elif(name=="snow"):
+            from animations import snow
+            return snow.Snow
+        elif(name=="snake"):
+            from animations import snake
+            return snake.Snake
+        elif(name=="disco"):
+            from animations import disco
+            return disco.Disco
+        elif(name=="fade"):
+            from animations import fade
+            return fade.Fade
+        elif(name=="disks"):
+            from animations import disks
+            return disks.Disks
+        elif(name=="music"):
+            from animations import music
+            return music.Music
+        else:
+            return None
 
 class Animation(threading.Thread):
     def __init__(self):

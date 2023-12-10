@@ -40,6 +40,7 @@ Now comes the fun part.
 4. Copy [cl-server.service](cl-server.service) to `/etc/systemd/system`.
 5. Activate the service through `sudo systemctl enable cl-server.service`
 6. Lights turn on?
+7. Connect to [http://raspberrypi.local:8080/home](http://raspberrypi.local:8080/home) to access the controller's web interface.
 
 #### 2. Calibrating the LEDs
 Get a wooden board or piece of paper. Draw a circle on it that is approximately the same size as the stand of the Christmas Tree. Indicate a spot on the circle and draw further spots separated by 45 degrees (or 22.5 degrees if you've got too much time on your hands and would like better precision of the animations later on).
@@ -76,21 +77,6 @@ Restart the Raspberry Pi (`sudo reboot`).
 ## Usage
 See documentation.md for the REST API. You can use the accompanying Android app or simply go to `http:raspberrypi.local/home` on any browser. From there, you can figure out the details by playing.
 
-## Notes
-### 5V vs 12V
-You can get a WS2811 string suitable for 5V or 12V. The advantage of 5V is that you can power the string and the Raspberry Pi using the same power supply. That power supply can be a simple phone charger with a spliced USB cable (though it should be a powerful one, depending on the number of LEDs). However, as the LEDs get only 5V, they will draw much more current, meaning that you should use thicker cables. (Pay attention to the max current rating of the cables!). Also, note that you cannot power the LEDs from a GPIO pin on the Pi!
-
-Using a 12V string will reduce the current draw significantly, allowing you to use thinner cables (and also a longer LED string). However, this does mean that you need a separate power supply for the Raspberry Pi and the string, with a common ground (such as a dual 12V/5V PSU).
-
-### Animation based on music
-This is waayyyy too finicky. Just don't try this. I'm not going to explain the intricacies of how I got this to work (sometimes).
-Also requires the `pyaudio` package.
-
-### Animation based on camera
-This functionality used Google's MoveNet to infer the position of 17 keypoints of a body in the view of the camera. It then uses a custom trained neural network to identify hands and their position. Using this information an animiation is created.
-
-This is still in development and should not be used. It also required the `tflite` package.
-
 ## Python environments
 ### On the Raspberry Pi
 The following packages are required.
@@ -108,5 +94,41 @@ Note that `rpi_ws281x`, `RPi.GPIO` and `flask_restx` should be installed with pi
 3. `opencv2`
 4. `matplotlib` (only for `validation.py`)
 
+## Setting up an nginx reverse proxy
+This can be especially useful if you want to enable https.
+To do this, start by installing `nginx` and `iptables`:
+```bash
+sudo apt install nginx iptables-persistent
+```
+First, setup the `nginx` service. Remove the default config file.
+```bash
+sudo rm /etc/nginx/sites-enabled/default
+```
+Copy [reverse-proxy.conf](reverse-proxy.conf) to `/etc/nginx/sites-enabled/` and run `sudo systemctl restart nginx`.
+
+The nginx server is now configured and running, so you can also access the controller's webpage through [http://raspberrypi.local/home](http://raspberrypi.local/home), without specifying the pesky port.
+Now, you might want to edit `reverse-proxy.conf` in order to enable https (note that you do need a valid ssl-certificate). You can find more information about that on the internet.
+
+Lastly, we can use iptables to block access to the 8080 port:
+```bash
+sudo iptables -A INPUT -i lo -j ACCEPT
+sudo iptables -A OUTPUT -o lo -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+sudo iptables-save > /etc/iptables/rules.v4
+```
 
 
+## Notes
+### 5V vs 12V
+You can get a WS2811 string suitable for 5V or 12V. The advantage of 5V is that you can power the string and the Raspberry Pi using the same power supply. That power supply can be a simple phone charger with a spliced USB cable (though it should be a powerful one, depending on the number of LEDs). However, as the LEDs get only 5V, they will draw much more current, meaning that you should use thicker cables. (Pay attention to the max current rating of the cables!). Also, note that you cannot power the LEDs from a GPIO pin on the Pi!
+
+Using a 12V string will reduce the current draw significantly, allowing you to use thinner cables (and also a longer LED string). However, this does mean that you need a separate power supply for the Raspberry Pi and the string, with a common ground (such as a dual 12V/5V PSU).
+
+### Animation based on music
+This is waayyyy too finicky. Just don't try this. I'm not going to explain the intricacies of how I got this to work (sometimes).
+Also requires the `pyaudio` package.
+
+### Animation based on camera
+This functionality used Google's MoveNet to infer the position of 17 keypoints of a body in the view of the camera. It then uses a custom trained neural network to identify hands and their position. Using this information an animiation is created.
+
+This is still in development and should not be used. It also required the `tflite` package.

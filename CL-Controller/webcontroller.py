@@ -100,11 +100,11 @@ class Element:
         script += "}\n"
         return script
 
-def create_tables():
+def create_tables(animdata:anim.AnimData):
     table_leds = Element("led_table", "all/")
     table_leds.add_toggle("Power", "power", True)
     table_leds.add_toggle("State", "state", True)
-    table_leds.add_color("Color", "color", utils.rgb_to_hex(cl_controller.led_util.leds[0]['color']))
+    table_leds.add_color("Color", "color", utils.rgb_to_hex(cl_controller.LEDUtil._instance.leds[0]['color']))
     table_leds.add_slider("Brightness", "brightness", min=0, max=255, val=200, step=1)
     table_leds_html = table_leds.create_table()
     script = "<script>\n" + table_leds.get_script() + "</script>\n"
@@ -112,16 +112,17 @@ def create_tables():
     table_animation = "<h3 style='text-align: center'><a onclick='stop_animation()'>Stop animation</a></h3>"
     table_animation += "<ul id='anim_list'>"
     #get animations info
-    for animation in anim.names:
-        info = anim.info[animation]
-        table_animation += f"<li onclick='window.location.href=\"home?animation={animation:s}\";'><span class='anim_name'>{info['name']:s}</span><br/>{info['description']:s}</li>\n"
+    if(animdata):
+        for animation in animdata.names:
+            info = animdata.info[animation]
+            table_animation += f"<li onclick='window.location.href=\"home?animation={animation:s}\";'><span class='anim_name'>{info['name']:s}</span><br/>{info['description']:s}</li>\n"
     table_animation += "</ul>\n"
 
     table_controller = "<div class='controller'><p><button id='shutdown' onclick='rpi_command(\"option\", \"shutdown\", \"/rpi/\");'>Shutdown</button></p>\n"
     table_controller += "<p><button id='restart' onclick='rpi_command(\"option\",\"restart\", \"/rpi/\");'>Restart</button></p></div>\n"
     return dict(table_leds=table_leds_html, table_animaties=table_animation, table_controller=table_controller, script=script)
 
-def create_animation_page(anim_name):
+def create_animation_page(anim_name, animdata):
     def calculate_step(low, high):
         d = high-low
         if (d < 1):
@@ -156,7 +157,7 @@ def create_animation_page(anim_name):
             settings.add_slider(display_name, name, min=int(setting["min"]), max=int(setting["max"]), val=int(setting["default"]), step=1)
         elif(setting["type"]=="list"):
             settings.add_list(display_name, name, options=setting["options"], default=setting["default"])
-    animation = anim.get(anim_name)
+    animation = animdata.get(anim_name) if animdata is not None else None
     if(animation is None):
         return dict(animation_name="Unknown animation. <a href='/home'>Go back</a>", script="", settings="")
     settings = Element("settings_table", "anim/")
@@ -165,10 +166,11 @@ def create_animation_page(anim_name):
     for key in instructions["settings"]:
         setting = instructions[key]
         create_setting(key,setting)
-    return dict(animation_name=anim.info[anim_name]["name"], script="<script>\n"+settings.get_script()+"</script>\n", settings=settings.create_table())
+    return dict(animation_name=animdata.info[anim_name]["name"], script="<script>\n"+settings.get_script()+"</script>\n", settings=settings.create_table())
 
-def render_webpage(animation=None):
+def render_webpage(animation=None, animdata=None):
     if(animation is None):
-        return render_template(MAIN_TEMPLATE, **create_tables())
+        return render_template(MAIN_TEMPLATE, **create_tables(animdata))
     else:
-        return render_template(ANIM_TEMPLATE, **create_animation_page(animation))
+        return render_template(ANIM_TEMPLATE, **create_animation_page(animation,animdata))
+

@@ -1,8 +1,7 @@
-#!/home/pi/Documents/environments/flask-wsgi/bin/python3
 import sys
 print(sys.path)
-from cl_controller import app
+from cl_controller import create_app
 
-
-if __name__=="__main__":
-    app.run()
+def main(*args, **kwargs):
+    print(args, kwargs)
+    return create_app(*args, **kwargs)
