@@ -104,7 +104,7 @@ def create_tables(animdata:anim.AnimData):
     table_leds = Element("led_table", "all/")
     table_leds.add_toggle("Power", "power", True)
     table_leds.add_toggle("State", "state", True)
-    table_leds.add_color("Color", "color", utils.rgb_to_hex(cl_controller.LEDUtil._instance.leds[0]['color']))
+    table_leds.add_color("Color", "color", utils.rgb_to_hex("255,0,0"))
     table_leds.add_slider("Brightness", "brightness", min=0, max=255, val=200, step=1)
     table_leds_html = table_leds.create_table()
     script = "<script>\n" + table_leds.get_script() + "</script>\n"

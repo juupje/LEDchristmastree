@@ -39,7 +39,7 @@ class ws2811Controller:
         GPIO.output(SWITCH_PIN, GPIO.LOW)
         self.nonce = random.randint(0,2**15-1)
         self.has_begun = False
-        #self.strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+        self.leds = [{"id": i, "color": "255,255,255", "state": False, "brightness": 255} for i in range(num_leds)]
         self.strip = PixelStrip(num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel)       
 
     def __del__(self):
@@ -47,6 +47,11 @@ class ws2811Controller:
         GPIO.output(SWITCH_PIN, GPIO.LOW)
         GPIO.setup(SWITCH_PIN, GPIO.IN)
         GPIO.cleanup()
+
+    def get(self, led_id):
+        for led in self.leds:
+            if(led["id"]==led_id):
+                return led
 
     def turn_on(self):
         GPIO.output(SWITCH_PIN, GPIO.HIGH)
@@ -60,10 +65,18 @@ class ws2811Controller:
     def update_all(self, instructions, show=False):
         self.stop_animation()
         succ = True
-        for instruction in instructions:
-            if not self.update(instruction, False):
-                succ = False
-                break
+        if(isinstance(instructions, (list,tuple))):
+            for instruction in instructions:
+                if not self.update(instruction, False):
+                    succ = False
+                    break
+        elif(isinstance(instructions, dict)):
+            #apply this instruction to every led
+            for led in self.leds:
+                led.update(instructions)
+                if not self.update(led, False):
+                    succ = False
+                    break
         if(show):
             self.show()
         return succ
@@ -72,9 +85,11 @@ class ws2811Controller:
         self.stop_animation()
         led_id = instruction["id"]
         if(instruction["state"]):
+            self.get(led_id).update(instruction)
             color = utils.parseColor(instruction["color"], instruction["brightness"])
             self.strip.setPixelColor(led_id, color)
         else:
+            self.get(led_id).update({"state": False, "color": "0,0,0", "brightness": 0})
             self.strip.setPixelColor(led_id, utils.Color(0,0,0))
         if(show):
             self.show()
@@ -94,9 +109,10 @@ class ws2811Controller:
 
         for i in range(self.strip.numPixels()):
             self.strip.setPixelColor(i, color)
+            self.leds[i].update({"color": "0,0,0"})
         self.show()
 
-    def begin(self, data):
+    def begin(self):
         if(self.has_begun): return False
         if not self.on:
             self.turn_on()
@@ -123,8 +139,7 @@ class ws2811Controller:
             time.sleep(0.04)
         
         print("Startup complete!")
-
-        for led in data:
+        for led in self.leds:
             self.update(led)
         self.show()
         self.has_begun = True

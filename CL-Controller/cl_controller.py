@@ -8,7 +8,7 @@ import os
 import io
 import webcontroller
 import importlib
-from multiprocessing import Lock
+import multiprocessing
 
 # LED strip configuration:
 LED_COUNT = 100        # Number of LED pixels.
@@ -19,46 +19,27 @@ LED_BRIGHTNESS = 255  # Set to 0 for darkest and 255 for brightest
 LED_INVERT = False    # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
-controller = None
 
 class LEDUtil():
-    _lock = Lock()
-    _instance = None
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None: 
-            cls._lock.acquire()
-            # Another thread could have created the instance
-            # before we acquired the lock. So check that the
-            # instance is still nonexistent.
-            if not cls._instance:
-                cls._instance = super().__new__(cls)
-                cls._instance.initialize(*args, **kwargs)
-            cls._lock.release()
-        return cls._instance
+    def __init__(self, *args, **kwargs):
+        self.controller = ws2811Controller(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+        print(str(self.controller))
+        self.controller.begin()
 
-    def initialize(self, controller:ws2811Controller):
-        print(str(controller))
-        self.leds = [{"id": i, "color": "255,255,255", "state": False, "brightness": 255} for i in range(controller.led_count())]
-        self.controller = controller
-    
     def get(self, led_id):
-        for led in self.leds:
-            if(led["id"]==led_id):
-                return led
+        return self.controller.get(led_id)
     
     def update_all(self, data):
         print("Received update for all", data)
+        print("Using controller", str(self.controller), multiprocessing.current_process())
         if("power" in data):
             if(data["power"]):
                 self.controller.turn_on()
-                self.controller.update_all(self.leds, show=True)
             else:
                 self.controller.turn_off()
-        
-        for led in self.leds:
-            led.update(data)
+            del data["power"]
 
-        if(self.controller.update_all(self.leds, show=True)):
+        if(self.controller.update_all(data, show=True)):
             return {"success": True, **data}
         return {"success": False, "message": ""}
 
@@ -78,22 +59,17 @@ class LEDUtil():
         if(self.controller.update(led, show=True)):
             return {"success": True, **led}
         else:
-            led = backup
+            led.update(backup)
             return {"success": False, "message": ""}
 
 def create_app(**kwargs):
-    global controller
     print("Starting")
     animdata = anim.AnimData(**kwargs)
-    if controller is None:
-        controller = ws2811Controller(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-    print("Using controller", str(controller))
-    led_util = LEDUtil(controller)
-    controller.begin(led_util.leds)
+    led_util = LEDUtil()
     app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 
     api = Api(app, version="1.0", title="CL-Controller", description="A RESTful API to control a christmas tree's lighting",
-            doc="/docs")
+            doc="/docs/")
 
     ns_leds = api.namespace('leds', description="LED related operations")
     ns_all = api.namespace('all', description="Global LED operations")
@@ -113,8 +89,8 @@ def create_app(**kwargs):
         'state': fields.Boolean(required=False, description="Turns the LEDs' on/off"),
         'brightness': fields.Integer(required=False, description="Sets the LEDs' brightness")
     })
-            
-    @app.route("/home", strict_slashes=False)
+    
+    @app.route('/home')
     def webpage():
         importlib.reload(webcontroller)
         return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), animdata=animdata)
