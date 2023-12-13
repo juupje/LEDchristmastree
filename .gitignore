@@ -6,3 +6,4 @@ images/
 locations/
 stuff.txt
 *.npy
+*.npz
