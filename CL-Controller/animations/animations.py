@@ -1,5 +1,6 @@
 import threading
 import numpy as np
+import importlib
 
 info = {
     "fade": {
@@ -45,6 +46,10 @@ info = {
     "disks": {
         "name": "Disks",
         "description": "Divide the tree into disks or stripes."
+    },
+    "geodesic": {
+        "name": "Geodesic Crawl",
+        "description": "Let a color wave crawl over the surface of the tree."
     }
 }
 names = list(info.keys())
@@ -102,6 +107,10 @@ class AnimData:
         elif(name=="music"):
             from animations import music
             return music.Music
+        elif(name=="geodesic"):
+            from animations import geodesic
+            importlib.reload(geodesic)
+            return geodesic.Geodesic
         else:
             return None
 

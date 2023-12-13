@@ -150,10 +150,12 @@ class ws2811Controller:
 
     def stop_animation(self):
         if(self.animation is not None):
+            print(str(self), "Stopping running animation", self.animation)
             self.animation.stop()
             self.animation = None
 
     def play_animation(self, animation):
+        print(str(self), "Starting new animation", animation)
         """
         Will start playing the given animation.
         The animation can be stopped by calling stop_animation()
