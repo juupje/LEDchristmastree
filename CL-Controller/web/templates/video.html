@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<head>
+    <title>PiCam Server</title>
+    <link rel="stylesheet" href='../static/style_video.css'/>
+</head>
+<body>
+        <h1>PiCam Live Streaming</h1>
+        <div class="img-container">
+            <img src="{{ url_for('video_feed') }}">
+        </div>
+</body>
+</html>
