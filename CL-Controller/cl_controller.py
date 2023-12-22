@@ -9,6 +9,9 @@ import io
 import webcontroller
 import importlib
 import multiprocessing
+import threading
+import requests
+import time
 
 # LED strip configuration:
 LED_COUNT = 100        # Number of LED pixels.
@@ -19,12 +22,16 @@ LED_BRIGHTNESS = 255  # Set to 0 for darkest and 255 for brightest
 LED_INVERT = False    # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
+SHUTDOWN_PIN = 23
 
 class LEDUtil():
     def __init__(self, *args, **kwargs):
         self.controller = ws2811Controller(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
         print(str(self.controller))
         self.controller.begin()
+
+    def get_controller(self):
+        return self.controller
 
     def get(self, led_id):
         return self.controller.get(led_id)
@@ -160,14 +167,14 @@ def create_app(**kwargs):
                     animation = animation()
                     result = animation.setup(**data)
                     if(result["success"]):
-                        controller.play_animation(animation)
+                        led_util.controller.play_animation(animation)
                     else:
                         del animation
                     return result
                 else:
                     return {"success": False, "message": "Could not find animation '" + data["name"] +"'."}
             elif("stop" in data):
-                controller.stop_animation()
+                led_util.controller.stop_animation()
                 return {"success": True}
             else:
                 return {"success": False, "message": "No animation name specified."}
@@ -188,25 +195,39 @@ def create_app(**kwargs):
         def post(self):
             data = api.payload
             if("option" in data):
-                cwd = os.getcwd()
                 option = data["option"]
                 if(option in ["kill", "reboot", "shutdown"]):
-                    cmd = ["bash", f"{cwd:s}/shutdown", option]
-                    with open("output.txt", "w+") as file:
-                        subprocess.run(cmd, stdout=file)         
-                        print("Executed command '" + " ".join(cmd));#
-                        file.seek(io.SEEK_SET)
-                        last_line = ""
-                        output = ""
-                        for line in file:
-                            output += line
-                            last_line = line.strip()
-                        print("Got response '" + last_line +"'")
-                        if(last_line == option):
-                            return {"success": True}
-                        else:
-                            return {"success": False, "message": output}
+                    response, output = shutdown(option)
+                    print("Got response '" + response +"'")
+                    if(response == option):
+                        return {"success": True}
+                    else:
+                        return {"success": False, "message": output}
             return {"success": False, "message": "Unknown option"}
+        
+    #register shutdown stuff
+    def shutdown(option="shutdown"):
+        print("Thread:", threading.current_thread())
+        print("Process:", multiprocessing.current_process())
+        print("SHUTDOWN FUNCTION CALLED", option)
+        #return "shutdown", "TEST"
+        cwd = os.getcwd()
+        cmd = ["bash", f"{cwd:s}/shutdown", option]
+        with open("output.txt", "w+") as file:
+            subprocess.run(cmd, stdout=file)         
+            print("Executed command '" + " ".join(cmd))
+            file.seek(io.SEEK_SET)
+            last_line = ""
+            output = ""
+            for line in file:
+                output += line
+                last_line = line.strip()
+        return last_line, output
+    def button_shutdown(option="shutdown"):
+        requests.post("http://localhost/rpi", json={"option": "shutdown"})
+        time.sleep(3)
+    
+    led_util.get_controller().setup_trigger(SHUTDOWN_PIN, button_shutdown)
     return app
 
 if __name__=="__main__":

@@ -1,9 +1,12 @@
 from picamera2 import Picamera2
 from picamera2.encoders import JpegEncoder, H264Encoder
 from picamera2.outputs import FileOutput
+from libcamera import Transform
 import time, io
 from flask import Response, render_template
 from threading import Condition
+import numpy as np
+
 
 VIDEO_TEMPLATE = "video.html"
 
@@ -33,29 +36,36 @@ class StreamingOutput(io.BufferedIOBase):
             self.condition.notify_all()
 
 def generate():
-    global picam2
     """Video streaming generator function."""
-    picam2 = picam2 or Picamera2()
-    picam2.configure(picam2.create_video_configuration(main={"size": (960, 720)}))
+    picam2 = Picamera2()
+    mode = picam2.sensor_modes[5]
+    print(mode)
+    config = picam2.create_video_configuration(transform=Transform(vflip=True), main={"size":(410,302)}, sensor={'output_size': (1640,1232)}, raw={'format': 'SRGGB8'}, encode='main')
+    picam2.align_configuration(config)
+    print(config)
+    picam2.configure(config)
+    picam2.set_controls({"FrameRate": 10})
+    print(picam2.camera_configuration()['sensor'])
     output = StreamingOutput()
     picam2.start_recording(JpegEncoder(), FileOutput(output))
+    frame_times = []
     try:
         while True:
             with output.condition:
                 output.condition.wait()
                 frame = output.frame
+            frame_times.append(time.time())
             yield b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
     finally:
         print("Seems like the stream crashed or stopped!")
         picam2.stop_recording()
-    '''for _ in picam.capture_file(stream, "jpeg"):
-        stream.seek(0)
-        frame = stream.read()
-        
-        time.sleep(0.2)
-        stream.seek(0)
-        stream.truncate()
-    '''
+        picam2.close()
+        frame_times = np.array(frame_times)
+        bins = np.arange(np.ceil(frame_times[0]), np.floor(frame_times[-1]))
+        fps, _ = np.histogram(frame_times, bins=bins)
+        fps = fps[1:-1]
+        print(f"Avg FPS: {np.mean(fps):.2f}, Max FPS: {np.max(fps):.2f}, Min FPS: {np.min(fps):.2f}")
+
 def render_video():
     return Response(generate(),mimetype='multipart/x-mixed-replace; boundary=frame')
 

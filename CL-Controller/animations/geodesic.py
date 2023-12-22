@@ -6,7 +6,7 @@ import utils, os
 from random import randint
 
 def calculate_geodesic_dists(X, kth:int):
-    cache_file = f"geodesic_dists-{kth}.npz"
+    cache_file = f"animations/geodesic_dists-{kth}.npz"
     if os.path.exists(cache_file):
         data = np.load(cache_file)
         if data['h']==sha1(X).digest():

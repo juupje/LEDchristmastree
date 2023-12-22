@@ -9,16 +9,17 @@ import time, random
 from rpi_ws281x import PixelStrip
 import utils
 import RPi.GPIO as GPIO
-from multiprocessing import Lock
+import multiprocessing
 GPIO.setmode(GPIO.BCM)
 
 Color = utils.Color
 
 SWITCH_PIN = 25 #GPIO in BCM channel
+SHUTDOWN_PIN = 23 #GPIO in BCM channel
 
 class ws2811Controller:
     _instance = None
-    _lock = Lock()
+    _lock = multiprocessing.Lock()
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None: 
@@ -39,14 +40,42 @@ class ws2811Controller:
         GPIO.output(SWITCH_PIN, GPIO.LOW)
         self.nonce = random.randint(0,2**15-1)
         self.has_begun = False
+        self.trigger_times = {}
         self.leds = [{"id": i, "color": "255,255,255", "state": False, "brightness": 255} for i in range(num_leds)]
         self.strip = PixelStrip(num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel)       
+    
+    def setup_trigger(self, pin, callback, interval=2):
+        #shutdown trigger
+        def trigger_func(channel=None):
+            state = GPIO.input(pin)
+            print("Triggered", state)
+            time.sleep(0.1)
+            newstate = GPIO.input(pin)
+            if(state == newstate == 0):
+                currTime = time.time()
+                if(currTime - self.trigger_times.get(pin, 0) <= interval):
+                    print("Trigger accepted -> second time")
+                    self.trigger_times[pin] = 0
+                    callback()
+                else:
+                    print("Trigger accepted -> first time")
+                    self.trigger_times[pin] = currTime
+            else:
+                print("Trigger rejected", newstate)
 
-    def __del__(self):
+        self.shutdown_pin = pin
+        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(pin, GPIO.FALLING, callback=trigger_func, bouncetime=300)
+
+    def stop(self):
+        print("Ending ws2811Controller")
         self.stop_animation()
         GPIO.output(SWITCH_PIN, GPIO.LOW)
         GPIO.setup(SWITCH_PIN, GPIO.IN)
         GPIO.cleanup()
+
+    def __del__(self):
+        self.stop()
 
     def get(self, led_id):
         for led in self.leds:
@@ -96,6 +125,8 @@ class ws2811Controller:
         return True
 
     def uniform_color(self, color):
+        if not self.on:
+            self.turn_on()
         self.stop_animation()
         if(isinstance(color, (list, type))):
             if(len(color)==3):
@@ -142,6 +173,7 @@ class ws2811Controller:
         for led in self.leds:
             self.update(led)
         self.show()
+        self.turn_off()
         self.has_begun = True
         return True
 
@@ -155,7 +187,7 @@ class ws2811Controller:
             self.animation = None
 
     def play_animation(self, animation):
-        print(str(self), "Starting new animation", animation)
+        print(str(self), "Starting new animation", animation, self.animation)
         """
         Will start playing the given animation.
         The animation can be stopped by calling stop_animation()
@@ -163,6 +195,8 @@ class ws2811Controller:
         """
         if(self.animation is not None):
             self.stop_animation()
+        if(not self.on):
+            self.turn_on()
         self.animation = animation
         self.animation.play(self.strip)
 

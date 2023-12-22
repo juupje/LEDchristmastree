@@ -5,6 +5,7 @@ pid=`ps ax | grep gunicorn | grep $port | awk '{split($0,a," "); print a[1]}' | 
 if [ -z "$pid" ]; then
 	echo "Error: cannot find gunicorn pid"
 else
+	bash -c "sleep 2; kill $pid" &
 	if [ "$1" == "shutdown" ]; then
 		echo "shutdown"
 		bash -c "sleep 5; shutdown now" &
@@ -13,7 +14,7 @@ else
 		bash -c "shutdown --reboot now"&
 	elif [ "$1" == "kill" ]; then
 		echo "kill"
-		bash -c "sleep 3; kill $pid" &
+		#bash -c "sleep 3; kill $pid" &
 	else
 		echo "Error: unknown option"
 	fi
