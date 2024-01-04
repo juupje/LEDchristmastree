@@ -9,3 +9,4 @@ stuff.txt
 *.npz
 movenet/4.tflite
 movenet/
+video_test/
