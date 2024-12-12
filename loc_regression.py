@@ -38,7 +38,7 @@ def find_max(x):
     return idx, m
 
 """ Hard coding start """
-locs[5,3,:] = np.array([381,219])
+
 """ Hard coding end """
 
 zs = np.stack([locs[i,:,0] for i in range(len(locs))]).astype(np.float32)
@@ -66,7 +66,6 @@ output[:, 2] = z
 x = locs[:,:,1]
 #normalize x to [-1,1]
 x[x==-1] = np.NaN
-print(np.nanmin(x), np.nanmax(x))
 x /= w/2
 x -= 1
 print(np.nanmin(x), np.nanmax(x))

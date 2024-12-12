@@ -84,10 +84,14 @@ def mean_enclosing_circle(x):
     d = np.std(x,axis=0)
     return c, np.max(d)*1.5
 
-def process_image(img):
+def process_image(img, ybox:tuple=None):
     filtered = cv.bitwise_and(img, img, mask=cv.inRange(img, lower, upper))
     filtered = filtered.max(axis=2)
     binary = (filtered>200).astype(np.uint8)
+    if ybox:
+        binary[:ybox[0]] = 0
+        if ybox[1] is not None:
+            binary[ybox[1]:] = 0
     clusters = find_clusters(binary)
     sizes = [cluster.shape[0] for cluster in clusters]
     best = None
@@ -109,11 +113,11 @@ def process_image(img):
         return c, r, binary
     return None, None, binary
 
-def main(show:bool=True, rotation:int=0, leds:int=None):
+def main(show:bool=True, rotation:int=0, leds:int=None, ybox:tuple=None, camera=0):
     for x in ["raw", "filtered", "processed"]:
         os.makedirs(f"images/{x}/{rotation:d}", exist_ok=True)
 
-    cam = cv.VideoCapture(0)
+    cam = cv.VideoCapture(camera)
     reader = CamReader(cam)
     #t = threading.Thread(target=lambda: reader(cam))
     reader.daemon = True
@@ -130,7 +134,7 @@ def main(show:bool=True, rotation:int=0, leds:int=None):
     cam.set(11, contrast)
     cam.set(12, saturation)
 
-    rest_url = "http://raspberrypi4.local:8080"
+    rest_url = "http://raspberrypi4.local"
     
     #first, turn all leds off
     response = requests.post(rest_url+"/all/", json={"power": True})
@@ -162,7 +166,7 @@ def main(show:bool=True, rotation:int=0, leds:int=None):
                 w = img.shape[1]
                 img = img[:, w//4:w//4*3, :]
                 copy = img.copy()
-                c, r, binary = process_image(img) #extract the largest roughly circular cluster
+                c, r, binary = process_image(img, ybox) #extract the largest roughly circular cluster
                 if(c is not None):
                     locs[i] = c
                     cv.circle(copy, (int(c[1]), int(c[0])), int(r), (200,21,5), 2) #draw a circle around the led
@@ -227,11 +231,18 @@ def main(show:bool=True, rotation:int=0, leds:int=None):
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("angle", help="Rotation angle of tree", type=int)
+    parser.add_argument("--cam", "-c", help="The camera to use", default=0)
     parser.add_argument("--ids", "-i", help="ID of LED", type=int, nargs="+")
     parser.add_argument("--no-show", help="Do not show camera windows", action='store_true')
+    parser.add_argument("--ybox", help="Vertical box that frames the tree. Given in the format 'min:max'")
     args = vars(parser.parse_args())
 
     if not os.path.exists("locations"):
         os.mkdir("locations")
     
-    main(show=not args["no_show"], rotation=args["angle"], leds=args["ids"])
+    ybox = args["ybox"]
+    if ybox is not None:
+        l, u = ybox.strip().split(":")
+        ybox = (int(l) if len(l)>0 else 0,int(u) if len(u)>0 else None)
+        print("Using ybox:",ybox)
+    main(show=not args["no_show"], rotation=args["angle"], leds=args["ids"], ybox=ybox, camera=args["cam"])

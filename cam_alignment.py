@@ -8,6 +8,7 @@ Created on Sat Nov 20 17:07:46 2021
 import cv2 as cv
 import queue, threading
 from time import sleep
+import argparse
 
 class CamReader(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
@@ -40,8 +41,8 @@ class CamReader(threading.Thread):
     def read(self):
         return self.q.get()
 
-def simple():
-    cam = cv.VideoCapture(0)
+def simple(cam_id=0):
+    cam = cv.VideoCapture(cam_id)
     reader = CamReader(cam)
     reader.daemon = True
     reader.start()
@@ -51,6 +52,7 @@ def simple():
         img = reader.read()
         h, w,_= img.shape
         img = cv.line(img, (w//2,0), (w//2, h), (0,0,255), thickness=2)
+        img = img[:, w//4:w//4*3, :]
         
         cv.imshow("cam-raw", img)
         if(cv.waitKey(1)==27 or cv.waitKey(1)==13):
@@ -59,5 +61,9 @@ def simple():
     cv.destroyWindow("cam-raw")
     reader.join()
     cam.release()
-    
-simple()
+
+if __name__=="__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cam", "-c", help="Camera ID", default=0)
+    args = vars(parser.parse_args())
+    simple(args["cam"])
