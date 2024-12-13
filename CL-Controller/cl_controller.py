@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from flask_restx import Api, Resource, fields
 from ws2811Controller import ws2811Controller
 from animations import animations as anim
@@ -75,6 +75,10 @@ def create_app(**kwargs):
     led_util = LEDUtil()
     app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 
+    @app.route('/')
+    def root():
+        return redirect("home", code=302)
+
     api = Api(app, version="1.0", title="CL-Controller", description="A RESTful API to control a christmas tree's lighting",
             doc="/docs/")
 
@@ -96,14 +100,14 @@ def create_app(**kwargs):
         'state': fields.Boolean(required=False, description="Turns the LEDs' on/off"),
         'brightness': fields.Integer(required=False, description="Sets the LEDs' brightness")
     })
-    
-    @app.route('/home')
+
+    @app.route("/home")
     def webpage():
         importlib.reload(webcontroller)
         return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), animdata=animdata)
 
     try:
-        import cv2, video_stream
+        import video_stream
         @app.route("/video")
         def video_webpage():
             return video_stream.render_webpage()
@@ -204,7 +208,11 @@ def create_app(**kwargs):
                     else:
                         return {"success": False, "message": output}
             return {"success": False, "message": "Unknown option"}
-        
+    
+    from preset_handler import preset_api as ns_preset, close_database
+    api.add_namespace(ns_preset)
+    app.teardown_appcontext(close_database)
+    
     #register shutdown stuff
     def shutdown(option="shutdown"):
         print("Thread:", threading.current_thread())
