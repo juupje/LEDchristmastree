@@ -113,7 +113,7 @@ def rgb_to_hsv(r, g, b):
     max_value = max(r, g, b)
     h, s = 0
     v = max_value
-    delta = value_max - value_min
+    delta = max_value - min_value
     if(delta < 1e-5):
         return h, s, v
     if(max_value > 0):
