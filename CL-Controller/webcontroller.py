@@ -1,6 +1,5 @@
 from flask import render_template
 import subprocess
-import cl_controller
 import utils
 from animations import animations as anim
 

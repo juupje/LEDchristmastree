@@ -6,12 +6,17 @@
 # various animations on a strip of NeoPixels.
 
 import time, random
-from rpi_ws281x import PixelStrip
 import utils
-import RPi.GPIO as GPIO
 import multiprocessing
-GPIO.setmode(GPIO.BCM)
-
+if utils.is_raspberrypi():
+    from rpi_ws281x import PixelStrip
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM)
+else:
+    print("Using mock GPIO!")
+    from .mock import PixelStrip
+    from .mock import GPIO
+    
 Color = utils.Color
 
 SWITCH_PIN = 25 #GPIO in BCM channel
