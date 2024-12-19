@@ -14,8 +14,8 @@ if utils.is_raspberrypi():
     GPIO.setmode(GPIO.BCM)
 else:
     print("Using mock GPIO!")
-    from .mock import PixelStrip
-    from .mock import GPIO
+    from mock import PixelStrip
+    from mock import GPIO
     
 Color = utils.Color
 
@@ -158,7 +158,7 @@ class ws2811Controller:
         colors = [Color(255,0,0), Color(0,255,0), Color(0,0,255)]
         N = self.strip.numPixels()
         
-        for i in range(3):
+        '''for i in range(3):
             self.strip.setPixelColor(i, colors[i])
             self.show()
             time.sleep(0.04)
@@ -173,7 +173,7 @@ class ws2811Controller:
             self.strip.setPixelColor(i-3, 0)
             self.show()
             time.sleep(0.04)
-        
+        '''
         print("Startup complete!")
         for led in self.leds:
             self.update(led)

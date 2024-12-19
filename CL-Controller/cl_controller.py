@@ -76,7 +76,7 @@ def create_app(**kwargs):
     app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 
     @app.route('/')
-    def root():
+    def home():
         return redirect("home", code=302)
 
     api = Api(app, version="1.0", title="CL-Controller", description="A RESTful API to control a christmas tree's lighting",
@@ -208,11 +208,16 @@ def create_app(**kwargs):
                     else:
                         return {"success": False, "message": output}
             return {"success": False, "message": "Unknown option"}
-    
-    from preset_handler import preset_api as ns_preset, close_database
-    api.add_namespace(ns_preset)
-    app.teardown_appcontext(close_database)
-    
+    try:
+        from preset_handler import preset_api as ns_preset, close_database
+        api.add_namespace(ns_preset)
+        app.teardown_appcontext(close_database)
+    except Exception as e:
+        print("Error when loading preset_handler", e)
+
+    from bluetooth_handler import bluetooth_api
+    api.add_namespace(bluetooth_api, path="/bluetooth")
+
     #register shutdown stuff
     def shutdown(option="shutdown"):
         print("Thread:", threading.current_thread())
