@@ -150,8 +150,10 @@ class ws2811Controller:
         self.strip.begin()
 
         self.uniform_color(Color(0,0,0))
+        
         colors = [Color(255,0,0), Color(0,255,0), Color(0,0,255)]
         N = self.strip.numPixels()
+        
         
         for i in range(3):
             self.strip.setPixelColor(i, colors[i])

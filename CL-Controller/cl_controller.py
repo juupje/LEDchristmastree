@@ -102,18 +102,21 @@ def create_app(**kwargs):
         return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), animdata=animdata)
 
     try:
-        import cv2, video_stream
+        import cv2, video_stream_picam as video_stream
         @app.route("/video")
         def video_webpage():
+            print("Video Webpage")
             return video_stream.render_webpage()
 
         @app.route("/video_feed", strict_slashes=False)
         def video_feed():
+            print("Video feed!")
             importlib.reload(video_stream)
             """Video streaming route. Put this in the src attribute of an img tag."""
             return video_stream.render_video()
-    except Exception as e:
+    except (Exception, Error) as e:
         print(e)
+        logging.error("Something went wrong!", exc_info=True)
 
     @ns_all.route("/")
     class ApplyAll(Resource):
@@ -217,6 +220,7 @@ def create_app(**kwargs):
     def button_shutdown(option="shutdown"):
         requests.post("http://localhost/rpi", json={"option": "shutdown"})
     
+    print("Got to here!")
     led_util.get_controller().setup_trigger(SHUTDOWN_PIN, button_shutdown)
     return app
 

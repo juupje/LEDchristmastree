@@ -50,6 +50,10 @@ info = {
     "geodesic": {
         "name": "Geodesic Crawl",
         "description": "Let a color wave crawl over the surface of the tree."
+    },
+    "camera": {
+        "name": "Camera",
+        "description": "Play animation based on video input."
     }
 }
 names = list(info.keys())
@@ -70,7 +74,7 @@ class AnimData:
         if not audio_enabled and "music" in self.names:
             self.names.remove("music")
         if not video_enabled and "camera" in self.names:
-            self.names.remove("camera")
+            pass#self.names.remove("camera")
         self.info = {k: v for k,v in info.items() if k in self.names}
 
     def get(self,name):
@@ -111,6 +115,10 @@ class AnimData:
             from animations import geodesic
             importlib.reload(geodesic)
             return geodesic.Geodesic
+        elif(name=="camera"):
+            from animations import video
+            importlib.reload(video)
+            return video.Video
         else:
             return None
 
