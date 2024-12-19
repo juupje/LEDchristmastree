@@ -4,8 +4,7 @@ from flask_restx import Api, Resource, fields
 from ws2811Controller import ws2811Controller
 from animations import animations as anim
 import subprocess
-import os
-import io
+import logging
 import webcontroller
 import importlib
 import multiprocessing
@@ -27,7 +26,7 @@ SHUTDOWN_PIN = 23
 class LEDUtil():
     def __init__(self, *args, **kwargs):
         self.controller = ws2811Controller(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-        print(str(self.controller))
+        logging.info("Initialized controller:"+str(self.controller))
         self.controller.begin()
 
     def get_controller(self):
@@ -37,8 +36,8 @@ class LEDUtil():
         return self.controller.get(led_id)
     
     def update_all(self, data):
-        print("Received update for all", data)
-        print("Using controller", str(self.controller), multiprocessing.current_process())
+        logging.info("Received update for all " + str(data))
+        logging.debug("Using controller" + str(self.controller) +" " + str(multiprocessing.current_process()))
         if("power" in data):
             if(data["power"]):
                 self.controller.turn_on()
@@ -51,7 +50,7 @@ class LEDUtil():
         return {"success": False, "message": ""}
 
     def update(self, data, led_id=None):
-        print("Received update" + (f" on id {led_id:d}" if led_id is not None else ""), data)
+        logging.info("Received update" + (f" on id {led_id:d}" if led_id is not None else "") + " "+  str(data))
         if(led_id is None):
             if("id" not in data):
                 return {"success": False, "message": "No ID given"}
@@ -70,7 +69,7 @@ class LEDUtil():
             return {"success": False, "message": ""}
 
 def create_app(**kwargs):
-    print("Starting")
+    logging.debug("Starting")
     animdata = anim.AnimData(**kwargs)
     led_util = LEDUtil()
     app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
@@ -103,24 +102,27 @@ def create_app(**kwargs):
         return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), animdata=animdata)
 
     try:
-        import cv2, video_stream
+        import cv2, video_stream_picam as video_stream
         @app.route("/video")
         def video_webpage():
+            print("Video Webpage")
             return video_stream.render_webpage()
 
         @app.route("/video_feed", strict_slashes=False)
         def video_feed():
+            print("Video feed!")
             importlib.reload(video_stream)
             """Video streaming route. Put this in the src attribute of an img tag."""
             return video_stream.render_video()
-    except Exception as e:
+    except (Exception, Error) as e:
         print(e)
+        logging.error("Something went wrong!", exc_info=True)
 
     @ns_all.route("/")
     class ApplyAll(Resource):
         @ns_all.marshal_list_with(leds_model)
         def get(self):
-            print("Got get request! /all/")
+            logging.debug("Got get request! /all/")
             return led_util.leds
         
         @ns_all.expect(all_model)
@@ -184,7 +186,7 @@ def create_app(**kwargs):
     @ns_anim.param("name", "The name of the animation")
     class AnimInformation(Resource):
         def get(self, name):
-            print(f"Retrieving info for '{name:s}'")
+            logging.debug(f"Retrieving info for '{name:s}'")
             animation = animdata.get(name)
             if(animation is not None):
                 return {"success": True, **animation.instructions}
@@ -197,36 +199,28 @@ def create_app(**kwargs):
             if("option" in data):
                 option = data["option"]
                 if(option in ["kill", "reboot", "shutdown"]):
-                    response, output = shutdown(option)
-                    print("Got response '" + response +"'")
-                    if(response == option):
-                        return {"success": True}
-                    else:
-                        return {"success": False, "message": output}
+                    success, stdout, stderr = shutdown(option)
+                    return {"success": success, "message": stdout if success else stderr}
             return {"success": False, "message": "Unknown option"}
         
     #register shutdown stuff
     def shutdown(option="shutdown"):
-        print("Thread:", threading.current_thread())
-        print("Process:", multiprocessing.current_process())
-        print("SHUTDOWN FUNCTION CALLED", option)
-        #return "shutdown", "TEST"
-        cwd = os.getcwd()
-        cmd = ["bash", f"{cwd:s}/shutdown", option]
+        logging.info("SHUTDOWN FUNCTION CALLED " + option)
+        logging.info("Thread:" + str(threading.current_thread()))
+        logging.info("Process:" + str(multiprocessing.current_process()))
+        subprocess.run(["sudo", "systemctl", "start", "cl-shutdown"])
+        time.sleep(0.2)
+        proc = subprocess.run(["sudo", "systemctl", "is-active", "cl-shutdown"], capture_output=True, text=True)
         with open("output.txt", "w+") as file:
-            subprocess.run(cmd, stdout=file)         
-            print("Executed command '" + " ".join(cmd))
-            file.seek(io.SEEK_SET)
-            last_line = ""
-            output = ""
-            for line in file:
-                output += line
-                last_line = line.strip()
-        return last_line, output
+            file.write("OUT:\n"+proc.stdout+"\n\nERR:\n"+proc.stderr)
+        if(proc.stdout.strip() == "active"):
+            return True, proc.stdout, proc.stderr
+        return False, proc.stdout, proc.stderr
+        
     def button_shutdown(option="shutdown"):
         requests.post("http://localhost/rpi", json={"option": "shutdown"})
-        time.sleep(3)
     
+    print("Got to here!")
     led_util.get_controller().setup_trigger(SHUTDOWN_PIN, button_shutdown)
     return app
 

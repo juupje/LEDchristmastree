@@ -9,3 +9,6 @@ stuff.txt
 *.npz
 movenet/4.tflite
 movenet/
+output.txt
+CL-Controller/logs/*.log
+*.log
