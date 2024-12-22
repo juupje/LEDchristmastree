@@ -15,6 +15,10 @@ class Element:
         self.name = name
         self.url = url
 
+    def add_button(self, display_name, name, callback):
+        button = f"<tr><td colspan=3 class='center-cell'><button id='{name:s}' class='table-btn' onclick='{callback:s}'>{display_name:s}</button></td></tr>"
+        self.items.append(button)
+
     def add_slider(self, display_name, name, min, max, val, step=1):
         slider = f"<tr><td>{display_name:s}</td>"
         slider += f"<td class='slider-cell'><input type='range' name='{name:s}' min='{min}' max='{max}' value='{val}' step='{step}' onchange='slider_update(\"{name:s}\")' class='slider' id='{name:s}'></td>"
@@ -82,7 +86,7 @@ class Element:
         self.names.append(name)
 
     def _create_button(self):
-        return f"<tr><td colspan=3 class='center-cell'><button id='{self.name:s}_btn' class='table-btn' onclick='parse_{self.name:s}()'>Send</button></td></tr>\n"
+        return f"<tr><td colspan=3 class='center-cell'><button id='{self.name:s}_btn' class='table-btn' onclick='send_{self.name:s}()'>Send</button></td></tr>\n"
 
     def create_table(self):
         s = f"<table id='{self.name:s}'>\n"
@@ -93,10 +97,12 @@ class Element:
         return s
     
     def get_script(self):
-        script = f"function parse_{self.name:s}()" + "{\n"
-        script += f"var json = collect_values('{self.name:s}',['" +"','".join(self.names) +"']);\n"
-        script += f"send_data('POST', '{self.url:s}', json);\n"
-        script += "}\n"
+        script  = f"function parse_data()" + "{\n"
+        script += f"    return collect_values(\"{self.name:s}\",[\"" +"\",\"".join(self.names) +"\"]);\n"
+        script +=  "}\n"
+        script += f"function send_{self.name:s}()" + "{\n"
+        script += f"    send_data('POST', '{self.url:s}', parse_data());\n"
+        script +=  "}\n"
         return script
 
 def create_tables(animdata:anim.AnimData):
@@ -156,15 +162,18 @@ def create_animation_page(anim_name, animdata):
             settings.add_slider(display_name, name, min=int(setting["min"]), max=int(setting["max"]), val=int(setting["default"]), step=1)
         elif(setting["type"]=="list"):
             settings.add_list(display_name, name, options=setting["options"], default=setting["default"])
+    
     animation = animdata.get(anim_name) if animdata is not None else None
     if(animation is None):
         return dict(animation_name="Unknown animation. <a href='/home'>Go back</a>", script="", settings="")
     settings = Element("settings_table", "anim/")
     settings.add_hidden("name", value=anim_name)
+    settings.add_button("Presets", "presets", f"toggle_preset_dialog(\"{anim_name}\")")
     instructions = animation.instructions
     for key in instructions["settings"]:
         setting = instructions[key]
         create_setting(key,setting)
+    settings.add_button("Save preset", "save_preset", f"save_preset(null, \"{anim_name}\", parse_data());")
     return dict(animation_name=animdata.info[anim_name]["name"], script="<script>\n"+settings.get_script()+"</script>\n", settings=settings.create_table())
 
 def render_webpage(animation=None, animdata=None):

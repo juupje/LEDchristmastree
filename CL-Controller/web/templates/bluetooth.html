@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Kerstboom lichtjes</title>
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" title="main"/>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.7.0/css/bootstrap-slider.min.css" rel="stylesheet"/>
+        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.7.0/bootstrap-slider.min.js"></script>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+        {{ script|safe }}
+    </head>
+    <body>
+        <nav class="navbar navbar-inverse">
+            <div class="container">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="/home">Christmastree Lights</a>
+                </div>
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                    <li><a href="/home#leds" class="selected">LEDs</a></li>
+                    <li><a href="/home/#anim">Animations</a></li>
+                    <li><a href="/home#controller">Controller</a></li>
+                    <li><a href="#">Bluetooth</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="container" id='main-content' style="max-width: 700px">
+        <div class="row justify-content-start">
+            <div id="bluetooth" class="section">
+                <h3 style="text-align: center" id="leds">LEDs</h3>
+                <div class="col">
+                    <table id="tblBluetooth">
+                        <tr><td>Scanning</td>
+                            <td><input id='scanning' class='toggle-switch' type='checkbox' name='scanning'><label class='toggle-switch-label' for='scanning'>Toggle</label></td>
+                            <td></td>
+                        </tr>
+                        <tr><td>Select device:</td>
+                            <td><form class='drop-down_container'><ul class='drop-down'>
+                                <li><input class='drop-down_close' type='radio' name='drop-down_bt' id='bt-close' value=''/><span class='drop-down_label drop-down_placeholder'>Select option</span></li>
+                                <li class='drop-down_items'>
+                                    <input class='drop-down_expand' type='radio' name='drop-down_bt' id='bt_open'/><label class='drop-down_close_label' for='bt_close'></label>
+                                    <ul class='drop-down_options'>
+                                        <li class='drop-down_option'>
+                                            <input class='drop-down_input' onclick='device_clicked("bt", "{option:s}")'
+                                                    type='radio' name='drop-down_bt' value='{option:s}' id='bt-{option:s}'>
+                                            <label class='drop-down_label' for='bt-{option:s}'>{option:s}</label>
+                                        </li>
+                                    </ul><label class='drop-down_expand_label' for='bt_open'></label>
+                                </li></ul></form>
+                            </td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div id="popup" class="hide-popup">
+            <div class="content">
+                Success!
+            </div>
+        </div>
+    </body>
+</html>

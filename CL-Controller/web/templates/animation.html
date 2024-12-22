@@ -7,6 +7,7 @@
         <title>Kerstboom lichtjes</title>
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style_anim.css') }}"/>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" title="main"/>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.7.0/css/bootstrap-slider.min.css" rel="stylesheet"/>
         
@@ -27,6 +28,7 @@
                     <li><a href="/home#leds" class="selected">LEDs</a></li>
                     <li><a href="/home#anim">Animations</a></li>
                     <li><a href="/home#controller">Controller</a></li>
+                    <li><a href="/bluetooth">Bluetooth</a></li>
                     </ul>
                 </div>
             </div>
@@ -43,6 +45,19 @@
             <div class="content">
                 Success!
             </div>
+        </div>
+        <div id="preset_dialog" style="display: none;">
+            <div class="content container">
+                <table>
+                    <tr><th><h1>Select a preset:</h1></th></tr>
+                    <tr><td><select name="preset_select" id="preset_select" class="table-list">
+
+                    </select></td></tr>
+                    <tr><td><button onclick="close_preset_dialog(false)" id="cancel-btn" class="table-btn">Cancel</button>
+                            <button onclick="close_preset_dialog(true)" id="select-btn" class="table-btn">Select</button>
+                    </td></tr>
+                </table>
+            </div>  
         </div>
     </body>
 </html>

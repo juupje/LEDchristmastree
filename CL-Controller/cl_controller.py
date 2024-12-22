@@ -120,6 +120,16 @@ def create_app(**kwargs):
     except Exception as e:
         print(e)
 
+    try:
+        import bluetooth_handler as bth
+
+        api.add_namespace(bth.bluetooth_api, path="/bluetooth")
+        @app.route("/bluetooth")
+        def bluetooth_webpage():
+            return bth.render_webpage()
+    except Exception as e:
+        print(e)
+
     @ns_all.route("/")
     class ApplyAll(Resource):
         @ns_all.marshal_list_with(leds_model)
@@ -209,14 +219,12 @@ def create_app(**kwargs):
                         return {"success": False, "message": output}
             return {"success": False, "message": "Unknown option"}
     try:
-        from preset_handler import preset_api as ns_preset, close_database
+        from preset_handler import preset_api as ns_preset, close_database, initialize
         api.add_namespace(ns_preset)
         app.teardown_appcontext(close_database)
+        initialize()
     except Exception as e:
         print("Error when loading preset_handler", e)
-
-    from bluetooth_handler import bluetooth_api
-    api.add_namespace(bluetooth_api, path="/bluetooth")
 
     #register shutdown stuff
     def shutdown(option="shutdown"):
