@@ -2,7 +2,8 @@ from flask import render_template
 import subprocess
 import utils
 from animations import animations as anim
-
+import json
+animdata = None
 result = subprocess.run(['hostname', '-I'], stdout=subprocess.PIPE)
 IP = result.stdout.decode("utf-8").split(" ")[0]
 MAIN_TEMPLATE = "index.html"
@@ -105,8 +106,8 @@ class Element:
         script +=  "}\n"
         return script
 
-def create_tables(animdata:anim.AnimData):
-    table_leds = Element("led_table", "all/")
+def create_tables():
+    table_leds = Element("led_table", "/api/all/")
     table_leds.add_toggle("Power", "power", True)
     table_leds.add_toggle("State", "state", True)
     table_leds.add_color("Color", "color", utils.rgb_to_hex("255,0,0"))
@@ -123,11 +124,11 @@ def create_tables(animdata:anim.AnimData):
             table_animation += f"<li onclick='window.location.href=\"home?animation={animation:s}\";'><span class='anim_name'>{info['name']:s}</span><br/>{info['description']:s}</li>\n"
     table_animation += "</ul>\n"
 
-    table_controller = "<div class='controller'><p><button id='shutdown' onclick='rpi_command(\"option\", \"shutdown\", \"/rpi/\");'>Shutdown</button></p>\n"
-    table_controller += "<p><button id='restart' onclick='rpi_command(\"option\",\"restart\", \"/rpi/\");'>Restart</button></p></div>\n"
+    table_controller = "<div class='controller'><p><button id='shutdown' onclick='rpi_command(\"option\", \"shutdown\", \"/api/rpi/\");'>Shutdown</button></p>\n"
+    table_controller += "<p><button id='restart' onclick='rpi_command(\"option\",\"restart\", \"/api/rpi/\");'>Restart</button></p></div>\n"
     return dict(table_leds=table_leds_html, table_animaties=table_animation, table_controller=table_controller, script=script)
 
-def create_animation_page(anim_name, animdata):
+def create_animation_page(anim_name:str, preset:int=None):
     def calculate_step(low, high):
         d = high-low
         if (d < 1):
@@ -166,19 +167,46 @@ def create_animation_page(anim_name, animdata):
     animation = animdata.get(anim_name) if animdata is not None else None
     if(animation is None):
         return dict(animation_name="Unknown animation. <a href='/home'>Go back</a>", script="", settings="")
-    settings = Element("settings_table", "anim/")
+    settings = Element("settings_table", "/api/anim/")
     settings.add_hidden("name", value=anim_name)
     settings.add_button("Presets", "presets", f"toggle_preset_dialog(\"{anim_name}\")")
     instructions = animation.instructions
+
+    #load the preset
+    preset_result = None
+    if preset is not None:
+        try:
+            preset = int(preset)
+            from preset_handler import ThreadedDatabaseHandler, DATABASE_PATH
+            handler = ThreadedDatabaseHandler(DATABASE_PATH)
+            preset_result, _ = handler.execute("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=preset), one=True)
+            print("Loading preset:", preset_result)
+            if preset_result["animation"] != anim_name:
+                print(f"Preset for {preset_result['animation']} does not match the animation ({anim_name})!")
+                preset_result = None
+        except Exception as e:
+            print("Something went wrong...")
+            print(e)
+
+    if(preset_result):
+        if type(preset_result["json"]) is str:
+            preset_result["json"] = json.loads(preset_result["json"])
+        for key in preset_result["json"]:
+            if key in instructions["settings"]:
+                instructions[key]["default"] = preset_result["json"][key]
+
     for key in instructions["settings"]:
         setting = instructions[key]
         create_setting(key,setting)
     settings.add_button("Save preset", "save_preset", f"save_preset(null, \"{anim_name}\", parse_data());")
     return dict(animation_name=animdata.info[anim_name]["name"], script="<script>\n"+settings.get_script()+"</script>\n", settings=settings.create_table())
 
-def render_webpage(animation=None, animdata=None):
+def render_webpage(animation:str=None, preset:int=None):
+    global animdata
+    if animdata is None:
+        animdata = anim.AnimData()
     if(animation is None):
-        return render_template(MAIN_TEMPLATE, **create_tables(animdata))
+        return render_template(MAIN_TEMPLATE, **create_tables())
     else:
-        return render_template(ANIM_TEMPLATE, **create_animation_page(animation,animdata))
+        return render_template(ANIM_TEMPLATE, **create_animation_page(animation,preset))
 

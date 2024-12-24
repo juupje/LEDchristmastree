@@ -82,10 +82,10 @@ def create_app(**kwargs):
     api = Api(app, version="1.0", title="CL-Controller", description="A RESTful API to control a christmas tree's lighting",
             doc="/docs/")
 
-    ns_leds = api.namespace('leds', description="LED related operations")
-    ns_all = api.namespace('all', description="Global LED operations")
-    ns_anim = api.namespace('anim', description="Animation related operations")
-    ns_rpi = api.namespace('rpi', description="Raspberry Pi related operations")
+    ns_leds = api.namespace('leds', description="LED related operations", path="/api/leds")
+    ns_all = api.namespace('all', description="Global LED operations", path="/api/all")
+    ns_anim = api.namespace('anim', description="Animation related operations", path="/api/anim")
+    ns_rpi = api.namespace('rpi', description="Raspberry Pi related operations", path="/api/rpi")
 
     leds_model = api.model('leds', {
         'id': fields.Integer(readonly=True, description="The LED's number"),
@@ -104,7 +104,7 @@ def create_app(**kwargs):
     @app.route("/home")
     def webpage():
         importlib.reload(webcontroller)
-        return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), animdata=animdata)
+        return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), preset=request.args.get("preset", default=None, type=int))
 
     try:
         import video_stream
@@ -219,10 +219,14 @@ def create_app(**kwargs):
                         return {"success": False, "message": output}
             return {"success": False, "message": "Unknown option"}
     try:
-        from preset_handler import preset_api as ns_preset, close_database, initialize
+        from preset_handler import preset_api as ns_preset, close, render_preset_template
         api.add_namespace(ns_preset)
-        app.teardown_appcontext(close_database)
-        initialize()
+
+        @app.route("/presets")
+        def presets():
+            return render_preset_template()
+
+        #app.teardown_appcontext(close)
     except Exception as e:
         print("Error when loading preset_handler", e)
 
@@ -245,7 +249,7 @@ def create_app(**kwargs):
                 last_line = line.strip()
         return last_line, output
     def button_shutdown(option="shutdown"):
-        requests.post("http://localhost/rpi", json={"option": "shutdown"})
+        requests.post("http://localhost/api/rpi", json={"option": "shutdown"})
         time.sleep(3)
     
     led_util.get_controller().setup_trigger(SHUTDOWN_PIN, button_shutdown)

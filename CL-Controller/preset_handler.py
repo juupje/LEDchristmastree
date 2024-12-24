@@ -4,10 +4,11 @@ import sqlite3 as sq
 import os
 import json, datetime
 from animations.animations import AnimData
+import queue, threading
 
 DATABASE_PATH = "database.db"
 
-preset_api = Namespace("presets", description="Preset related operations")
+preset_api = Namespace("presets", description="Preset related operations", path="/api/presets")
 model = preset_api.model("Preset", {
     "id": fields.Integer(required=True, readonly=True, description="ID of the preset"),
     "name": fields.String(required=True, readonly=False, description="The name of the preset"),
@@ -17,26 +18,13 @@ model = preset_api.model("Preset", {
 })
 animdata = AnimData()
 
-def get_database() -> sq.Connection:
+def get_database() -> 'ThreadedDatabaseHandler':
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sq.connect(DATABASE_PATH, detect_types=sq.PARSE_DECLTYPES)
-        db.row_factory = make_dicts
+        db = g._database = ThreadedDatabaseHandler(DATABASE_PATH)
     return db
 
-def make_dicts(cursor, row):
-    return dict((cursor.description[idx][0], value)
-                for idx, value in enumerate(row))
-
-def query_db(query, args=(), one=False, commit=False):
-    cur = get_database().execute(query, args)
-    if commit:
-        cur.connection.commit()
-    rv = cur.fetchone() if one else cur.fetchall()  
-    cur.close()
-    return rv
-
-def close_database(exception=None):
+def close(exception=None):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
@@ -52,7 +40,7 @@ class PresetAPI(Resource):
         self.model = model
 
     def _get_item(self, id) -> dict | None:
-        return query_db("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=id), one=True)
+        return get_database().execute("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=id), one=True)[0]
 
     @preset_api.marshal_with(model)
     def get(self, id):
@@ -72,7 +60,7 @@ class PresetAPI(Resource):
             assert item["animation"] == preset_api.payload["animation"], "Cannot change animation of preset."
             item.update(preset_api.payload)
             item = marshal(item, model)
-            query_db("UPDATE presets SET name=(:name), created_on=(:created_on), json=(:json) WHERE id=(:id)", args=item, commit=True)
+            get_database().execute("UPDATE presets SET name=(:name), created_on=(:created_on), json=(:json) WHERE id=(:id)", args=item, commit=True)
         except Exception as e:
             return {"success": False, "message": str(e)}, 400
         return item, 200
@@ -80,7 +68,7 @@ class PresetAPI(Resource):
     @preset_api.response(204, "Preset deleted")
     def delete(self, id):
         #delete a preset
-        query_db("DELETE FROM preset WHERE id=(:id)", args=dict(id=id), commit=True)
+        get_database().execute("DELETE FROM preset WHERE id=(:id)", args=dict(id=id), commit=True)
         return {"success": True}, 204
     
     #@preset_api.expect(model, validate=True)
@@ -107,7 +95,7 @@ class PresetAPI(Resource):
             return "Missing parameters", 400
         if not all([param in animation for param in params]):
             return "Invalid parameters", 400
-        query_db("INSERT INTO presets (name, animation, created_on, json) VALUES (:name, :animation, :created_on, :json)",
+        get_database().execute("INSERT INTO presets (name, animation, created_on, json) VALUES (:name, :animation, :created_on, :json)",
                     args=payload, commit=True)
         res = {"success": True, "name": payload["name"], "animation": payload["animation"], "json": params}
         return res, 201
@@ -124,21 +112,76 @@ class PresetListAPI(Resource):
     def get(self, animation=None):
         #get a list of all presets
         if animation is None:
-            items = query_db("SELECT id, name, animation, created_on, json FROM presets")
+            items, _ = get_database().execute("SELECT id, name, animation, created_on, json FROM presets")
         else:
-            items = query_db("SELECT id, name, animation, created_on, json FROM presets WHERE animation=(:animation)", args=dict(animation=animation))
+            items, _ = get_database().execute("SELECT id, name, animation, created_on, json FROM presets WHERE animation=(:animation)", args=dict(animation=animation))
+        if items is None:
+            return {"success": False, "message": "No presets found"}, 404
         return jsonify([item for item in items])
 
-def initialize():
-    #verify that the database exists
-    sq.register_adapter(datetime.datetime, lambda x: x.strftime("%Y-%m-%d %H:%M:%S"))
-    sq.register_converter("DATE", lambda x: datetime.datetime.fromisoformat(x.decode()))
-    sq.register_adapter(dict, lambda x: json.dumps(x, ensure_ascii=True))
-    sq.register_adapter("JSON", lambda x: json.loads(x))
-    if not os.path.isfile(DATABASE_PATH):
-        print("!!! Creating database !!!")
-        con = sq.connect(DATABASE_PATH, detect_types=sq.PARSE_DECLTYPES)
-        cur = con.cursor()
-        cur.execute("CREATE TABLE presets(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, animation TEXT, created_on DATE, json JSON)")
-        con.commit()
+#ensure that this is threadsafe
+class ThreadedDatabaseHandler:
+    #make it a singleton
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(ThreadedDatabaseHandler, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self, db_file):
+        self.db_file = db_file
+        sq.register_adapter(datetime.datetime, lambda x: x.strftime("%Y-%m-%d %H:%M:%S"))
+        sq.register_converter("DATE", lambda x: datetime.datetime.fromisoformat(x.decode()))
+        sq.register_adapter(dict, lambda x: json.dumps(x, ensure_ascii=True))
+        sq.register_adapter("JSON", lambda x: json.loads(x))
+        if not os.path.isfile(DATABASE_PATH):
+            print("!!! Creating database !!!")
+            con = sq.connect(DATABASE_PATH, detect_types=sq.PARSE_DECLTYPES)
+            cur = con.cursor()
+            cur.execute("CREATE TABLE presets(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, animation TEXT, created_on DATE, json JSON)")
+            con.commit()
+            con.close()
+            self.connection = None
+        self.query_queue = queue.Queue()
+        self.db_thread = threading.Thread(target=self._worker)
+        self.db_thread.daemon = True
+        self.db_thread.start()
+
+    def make_dicts(self, cursor, row):
+        return dict((cursor.description[idx][0], value)
+                for idx, value in enumerate(row))
+
+    def _worker(self):
+        con = sq.connect(self.db_file, detect_types=sq.PARSE_DECLTYPES)
+        con.row_factory = self.make_dicts
+        while True:
+            query, args, one, commit, result_queue = self.query_queue.get()
+            if query is None:
+                break
+            cur = con.cursor()
+            args = args or ()
+            cur.execute(query, args)
+            if commit:
+                con.commit()
+            if one:
+                result_queue.put((cur.fetchone(), 1))
+            else:
+                result_queue.put((cur.fetchall(), cur.rowcount))
+            cur.close()
         con.close()
+    
+    def execute(self, query:str,args:tuple=None, one:bool=False, commit:bool=False) -> list|None:
+        args = args or ()
+        res_queue = queue.Queue(1)
+        self.query_queue.put((query, args, one, commit, res_queue))
+        res, count = res_queue.get()
+        return (None if res is None or len(res)==0 else res), count
+
+    def __del__(self):
+        self.close()
+        ThreadedDatabaseHandler._instance = None
+    
+    def close(self):
+        print("Closing ThreadedDatabaseHandler")
+        self.query_queue.put((None,None,None, None, None))
+        self.db_thread.join()
