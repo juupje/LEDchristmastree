@@ -67,6 +67,12 @@ def get_locations():
     return locations
 
 class AnimData:
+    _instance = None
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(AnimData, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self,anim_file="animations/locations.npy", audio_enabled=False, video_enabled=False, **kwargs):
         global names, info, animation_file
         animation_file = anim_file

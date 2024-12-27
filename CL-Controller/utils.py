@@ -113,7 +113,7 @@ def rgb_to_hsv(r, g, b):
     max_value = max(r, g, b)
     h, s = 0
     v = max_value
-    delta = value_max - value_min
+    delta = max_value - min_value
     if(delta < 1e-5):
         return h, s, v
     if(max_value > 0):
@@ -147,3 +147,10 @@ def wheel(pos, brightness=255):
 
 def clamp(x, lower, upper):
     return min(max(x, lower), upper)
+
+def is_raspberrypi():
+    try:
+        with open('/sys/firmware/devicetree/base/model', 'r') as m:
+            if 'raspberry pi' in m.read().lower(): return True
+    except Exception: pass
+    return False

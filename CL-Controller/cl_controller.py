@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from flask_restx import Api, Resource, fields
 from ws2811Controller import ws2811Controller
 from animations import animations as anim
@@ -74,13 +74,17 @@ def create_app(**kwargs):
     led_util = LEDUtil()
     app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 
+    @app.route('/')
+    def home():
+        return redirect("home", code=302)
+
     api = Api(app, version="1.0", title="CL-Controller", description="A RESTful API to control a christmas tree's lighting",
             doc="/docs/")
 
-    ns_leds = api.namespace('leds', description="LED related operations")
-    ns_all = api.namespace('all', description="Global LED operations")
-    ns_anim = api.namespace('anim', description="Animation related operations")
-    ns_rpi = api.namespace('rpi', description="Raspberry Pi related operations")
+    ns_leds = api.namespace('leds', description="LED related operations", path="/api/leds")
+    ns_all = api.namespace('all', description="Global LED operations", path="/api/all")
+    ns_anim = api.namespace('anim', description="Animation related operations", path="/api/anim")
+    ns_rpi = api.namespace('rpi', description="Raspberry Pi related operations", path="/api/rpi")
 
     leds_model = api.model('leds', {
         'id': fields.Integer(readonly=True, description="The LED's number"),
@@ -95,14 +99,14 @@ def create_app(**kwargs):
         'state': fields.Boolean(required=False, description="Turns the LEDs' on/off"),
         'brightness': fields.Integer(required=False, description="Sets the LEDs' brightness")
     })
-    
-    @app.route('/home')
+
+    @app.route("/home")
     def webpage():
         importlib.reload(webcontroller)
-        return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), animdata=animdata)
+        return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), preset=request.args.get("preset", default=None, type=int))
 
     try:
-        import cv2, video_stream_picam as video_stream
+        import video_stream
         @app.route("/video")
         def video_webpage():
             print("Video Webpage")
@@ -117,6 +121,16 @@ def create_app(**kwargs):
     except (Exception, Error) as e:
         print(e)
         logging.error("Something went wrong!", exc_info=True)
+
+    try:
+        import bluetooth_handler as bth
+
+        api.add_namespace(bth.bluetooth_api, path="/bluetooth")
+        @app.route("/bluetooth")
+        def bluetooth_webpage():
+            return bth.render_webpage()
+    except Exception as e:
+        print(e)
 
     @ns_all.route("/")
     class ApplyAll(Resource):
@@ -202,7 +216,18 @@ def create_app(**kwargs):
                     success, stdout, stderr = shutdown(option)
                     return {"success": success, "message": stdout if success else stderr}
             return {"success": False, "message": "Unknown option"}
-        
+    try:
+        from preset_handler import preset_api as ns_preset, close, render_preset_template
+        api.add_namespace(ns_preset)
+
+        @app.route("/presets")
+        def presets():
+            return render_preset_template()
+
+        #app.teardown_appcontext(close)
+    except Exception as e:
+        print("Error when loading preset_handler", e)
+
     #register shutdown stuff
     def shutdown(option="shutdown"):
         logging.info("SHUTDOWN FUNCTION CALLED " + option)
@@ -218,9 +243,9 @@ def create_app(**kwargs):
         return False, proc.stdout, proc.stderr
         
     def button_shutdown(option="shutdown"):
-        requests.post("http://localhost/rpi", json={"option": "shutdown"})
+        requests.post("http://localhost/api/rpi", json={"option": "shutdown"})
+        time.sleep(3)
     
-    print("Got to here!")
     led_util.get_controller().setup_trigger(SHUTDOWN_PIN, button_shutdown)
     return app
 
