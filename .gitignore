@@ -10,3 +10,6 @@ stuff.txt
 movenet/4.tflite
 movenet/
 video_test/
+output.txt
+CL-Controller/logs/*.log
+*.log
