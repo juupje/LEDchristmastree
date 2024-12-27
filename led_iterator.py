@@ -20,7 +20,7 @@ contrast = 50
 lower = np.array([100,100,100])
 upper = np.array([255,255,255])
 
-rest_url = "http://raspberrypi4.local:8080"
+rest_url = "http://raspberrypi4.local/api"
 
 class CamReader(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
