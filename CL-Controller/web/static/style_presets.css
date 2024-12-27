@@ -1,0 +1,28 @@
+.preset_list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.preset_list > li {
+    text-align: center;
+    position: relative;
+    padding-left: 5%;
+    padding-top: 1em;
+    padding-bottom: 1em;
+    margin: 2px;
+    border: 1px solid #aaa;
+    background-color: rgb(198, 234, 255);
+    border-radius: 10px;
+    width: 100%;
+    cursor: pointer;
+}
+
+.preset_list a:link, .preset_list a:visited {
+    text-decoration: none;
+    color: black;
+}
+.preset_list .preset_name {
+    font-weight: bold;
+    font-size: 1.3em;
+}
