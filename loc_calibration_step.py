@@ -134,7 +134,7 @@ def main(show:bool=True, rotation:int=0, leds:int=None, ybox:tuple=None, camera=
     cam.set(11, contrast)
     cam.set(12, saturation)
 
-    rest_url = "http://raspberrypi4.local"
+    rest_url = "http://raspberrypi4.local/api"
     
     #first, turn all leds off
     response = requests.post(rest_url+"/all/", json={"power": True})
