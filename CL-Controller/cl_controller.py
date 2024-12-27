@@ -106,7 +106,7 @@ def create_app(**kwargs):
         return webcontroller.render_webpage(animation=request.args.get("animation", default=None, type=str), preset=request.args.get("preset", default=None, type=int))
 
     try:
-        import video_stream
+        import video_stream_opencv as video_stream
         @app.route("/video")
         def video_webpage():
             print("Video Webpage")
@@ -118,7 +118,7 @@ def create_app(**kwargs):
             importlib.reload(video_stream)
             """Video streaming route. Put this in the src attribute of an img tag."""
             return video_stream.render_video()
-    except (Exception, Error) as e:
+    except Exception as e:
         print(e)
         logging.error("Something went wrong!", exc_info=True)
 
