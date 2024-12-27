@@ -1,11 +1,13 @@
-from flask import g, jsonify
+from flask import g, jsonify, render_template
 from flask_restx import Api, fields, Resource, Namespace, marshal
 import sqlite3 as sq
 import os
 import json, datetime
 from animations.animations import AnimData
 import queue, threading
+import html
 
+PRESET_TEMPLATE = "presets.html"
 DATABASE_PATH = "database.db"
 
 preset_api = Namespace("presets", description="Preset related operations", path="/api/presets")
@@ -118,6 +120,29 @@ class PresetListAPI(Resource):
         if items is None:
             return {"success": False, "message": "No presets found"}, 404
         return jsonify([item for item in items])
+
+def render_preset_template():
+    #create preset table
+    items, _ = get_database().execute("SELECT id, name, animation, created_on, json FROM presets")
+    anims = {}
+    for item in items:
+        if item["animation"] not in anims:
+            anims[item["animation"]] = []
+        anims[item["animation"]].append(item)
+    #sort animations by name
+    anims = dict(sorted(anims.items(), key=lambda x: x[0]))
+    
+    tables = []
+    for anim in anims:
+        sanitized_name = html.escape(anim.replace(" ", "-"))
+        table = f"<div class='col'><h3 style='text-align: center' class='preset_heading' id='heading_{sanitized_name}'>{html.escape(anim)}</h3>"
+        table += f"<ul id='list_{sanitized_name:s}' class='preset_list'>\n"
+        for preset in anims[anim]:
+            sanitized_preset_name = html.escape(preset["name"])
+            table += f"<li onclick='window.location.href=\"home?animation={html.escape(anim):s}&preset={preset['id']:d}\";'><span class='preset_name'>{sanitized_preset_name:s}</span></li>\n"
+        table += "</ul></div>\n"
+        tables.append(table)
+    return render_template(PRESET_TEMPLATE, table_presets="\n".join(tables))
 
 #ensure that this is threadsafe
 class ThreadedDatabaseHandler:

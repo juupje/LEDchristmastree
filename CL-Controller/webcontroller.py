@@ -2,7 +2,8 @@ from flask import render_template
 import subprocess
 import utils
 from animations import animations as anim
-import json
+import json, html
+
 animdata = None
 result = subprocess.run(['hostname', '-I'], stdout=subprocess.PIPE)
 IP = result.stdout.decode("utf-8").split(" ")[0]
@@ -121,7 +122,7 @@ def create_tables():
     if(animdata):
         for animation in animdata.names:
             info = animdata.info[animation]
-            table_animation += f"<li onclick='window.location.href=\"home?animation={animation:s}\";'><span class='anim_name'>{info['name']:s}</span><br/>{info['description']:s}</li>\n"
+            table_animation += f"<li onclick='window.location.href=\"home?animation={html.escape(animation):s}\";'><span class='anim_name'>{html.escape(info['name']):s}</span><br/>{html.escape(info['description']):s}</li>\n"
     table_animation += "</ul>\n"
 
     table_controller = "<div class='controller'><p><button id='shutdown' onclick='rpi_command(\"option\", \"shutdown\", \"/api/rpi/\");'>Shutdown</button></p>\n"
