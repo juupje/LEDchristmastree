@@ -1,5 +1,8 @@
 .header-row { border-bottom: 1px solid #ccc; }
 table td:nth-child(1) {white-space: nowrap; width: 1%; font-size: 1.5em;}
+@media only screen and (max-width: 768px) {
+    table td:nth-child(1) {font-size: 1em;}
+}
 table .output {
     width: 60px;
     font-size: 1.1em;
@@ -217,7 +220,7 @@ input[type=color] {
 
 .drop-down {
     position: relative;
-	width: 200px;
+	width: 150px;
 	height: 30px;
 	cursor: pointer;
 	background-color: white;
@@ -303,7 +306,7 @@ input[type=color] {
     transition: all 250ms cubic-bezier(.4,.25,.3,1);
     display: block;
     height: 0;
-    font-size: 1.6rem;
+    font-size:  inherit;
     line-height: 30px;
     overflow: hidden;
     color: #3e3e3e;
