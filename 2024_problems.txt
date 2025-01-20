@@ -1,0 +1,4 @@
+For some reason, they lights don't work sometimes when the first animation command is send. The relay clicks, but nothing happens. 
+It seems journalctl shows workers being terminated with sigkill.
+When the service is restarted, the lights still don't work but no errors are shown.
+Perhaps there is an issue with the pin to which the lights are connected?
