@@ -58,9 +58,9 @@ class Geodesic(Animation):
             "default": 3,
         },
         "k-parameter": {"type": "int", "min": 6, "max": 20, "default": 8},
-        "brightness": {"type": "int", "min": 0, "max": 255, "default": 255},
-        "settings": ["color", "duration", "k-parameter", "brightness"],
+        "brightness": {"type": "int", "min": 0, "max": 255, "default": 255}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         """

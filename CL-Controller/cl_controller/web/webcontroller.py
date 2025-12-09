@@ -1,7 +1,7 @@
 from flask import render_template
 import subprocess
-import utils
-from animations import animations as anim
+import cl_controller.utils as utils
+from cl_controller.animations import animations as anim
 import json, html
 
 animdata = None
@@ -182,6 +182,9 @@ def create_animation_page(anim_name:str, preset: int | None = None):
             handler = ThreadedDatabaseHandler(DATABASE_PATH)
             preset_result, _ = handler.execute("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=preset), one=True)  # type: ignore
             print("Loading preset:", preset_result)
+            if preset_result is None:
+                print(f"Could not find preset with ID {preset}!")
+                raise Exception("Preset not found")
             if preset_result["animation"] != anim_name:
                 print(f"Preset for {preset_result['animation']} does not match the animation ({anim_name})!")
                 preset_result = None
@@ -193,10 +196,10 @@ def create_animation_page(anim_name:str, preset: int | None = None):
         if type(preset_result["json"]) is str:
             preset_result["json"] = json.loads(preset_result["json"])
         for key in preset_result["json"]:
-            if key in instructions["settings"]:
+            if key in animation.settings:
                 instructions[key]["default"] = preset_result["json"][key]
 
-    for key in instructions["settings"]:
+    for key in animation.settings:
         setting = instructions[key]
         create_setting(key,setting)
     settings.add_button("Save preset", "save_preset", f"save_preset(null, \"{anim_name}\", parse_data());")

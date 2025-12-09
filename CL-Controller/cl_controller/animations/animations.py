@@ -2,6 +2,7 @@ import threading
 import numpy as np
 import importlib
 from abc import abstractmethod
+from typing import List
 
 info = {
     "fade": {
@@ -130,6 +131,9 @@ class AnimData:
             return None
 
 class Animation(threading.Thread):
+    instructions: dict = {}
+    settings: List[str] = []
+    
     def __init__(self):
         super(Animation, self).__init__()
         self.daemon = True

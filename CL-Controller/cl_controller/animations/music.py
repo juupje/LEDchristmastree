@@ -8,7 +8,6 @@ import utils
 options = ["scroll", "energy", "spectrum"]
 class Music(Animation):
     instructions = {
-        "settings": ["bins", "mode", "scale", "direction", "brightness"],
         "mode": {
             "type": "list",
             "options": options,
@@ -28,6 +27,7 @@ class Music(Animation):
         },
         "brightness": {"type": "int", "min": 0, "max": 255, "default": 255}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         locations = get_locations()

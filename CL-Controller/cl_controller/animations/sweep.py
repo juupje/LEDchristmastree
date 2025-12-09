@@ -60,7 +60,6 @@ class Sweep(Animation):
 
 class Sweep_Vertical(Sweep):
     instructions = {
-        "settings": ["color", "duration", "brightness", "invert"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -75,6 +74,8 @@ class Sweep_Vertical(Sweep):
         "invert": {"type": "bool", "default": False},
         "brightness": {"type": "int", "min": 0, "max": 255, "default": 255},
     }
+    settings = list(instructions.keys())
+
     def setup(self, **kwargs):
         super()._setup(get_locations()[:, 2], **kwargs)
         self._is_setup = True
@@ -82,7 +83,6 @@ class Sweep_Vertical(Sweep):
 
 class Sweep_Horizontal(Sweep):
     instructions = {
-        "settings": ["color", "duration", "brightness", "invert", "angle"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -104,6 +104,8 @@ class Sweep_Horizontal(Sweep):
             "default": 0
         }
     }
+    settings = list(instructions.keys())
+
     def setup(self, **kwargs):
         angle = kwargs.get("angle", "x")
         if(angle == "x"):

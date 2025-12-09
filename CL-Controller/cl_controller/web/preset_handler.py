@@ -98,10 +98,13 @@ class PresetAPI(Resource):
         if "name" in params:
             del params["name"]
         #verify that the paramters match the animation
-        animation = animdata.get(payload["animation"]).instructions["settings"]
-        if not all([param in params for param in animation]):
+        anim = animdata.get(payload["animation"])
+        if anim is None:
+            return "Invalid animation", 400
+        settings = anim.settings
+        if not all([param in params for param in settings]):
             return "Missing parameters", 400
-        if not all([param in animation for param in params]):
+        if not all([param in settings for param in params]):
             return "Invalid parameters", 400
         get_database().execute("INSERT INTO presets (name, animation, created_on, json) VALUES (:name, :animation, :created_on, :json)",
                     args=payload, commit=True)

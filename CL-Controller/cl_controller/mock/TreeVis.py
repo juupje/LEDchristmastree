@@ -8,7 +8,7 @@ class TreeVis:
         self.locations = locations
         self.pixels.add_show_callback(self.update_visualization)
     
-    def update_visualization(self, leds: List[Tuple[int]]):
+    def update_visualization(self, leds: List[int]):
         try:
             import matplotlib.pyplot as plt
             from mpl_toolkits.mplot3d import Axes3D
@@ -18,7 +18,7 @@ class TreeVis:
             return
 
         # Convert LED colors from 0-255 to 0-1 RGBA tuples
-        colors = [utils.int_to_rgba(led) for led in leds]
+        colors = [color_to_rgb(led) for led in leds]
 
         # Initialize a non-blocking 3D window on first call
         if not hasattr(self, "_tv_initialized"):
@@ -33,7 +33,7 @@ class TreeVis:
             zs = [loc[1] for loc in self.locations]
 
             # Create scatter plot for LEDs
-            self._scat = self._ax.scatter(xs, ys, zs, c=colors, s=80, depthshade=True)
+            self._scat = self._ax.scatter(xs, ys, zs, c=colors, s=80, depthshade=True)  # type: ignore
 
             # Make the display nicer
             self._ax.set_xlabel("X")
@@ -58,9 +58,7 @@ class TreeVis:
             self._scat.set_edgecolor(colors)
         except Exception:
             # best-effort update if the above fails
-            self._scat._facecolor3d = colors
-            self._scat._edgecolor3d = colors
-
+            print("Failed to update tree visualization colors")
         # Redraw the figure non-blocking
         self._fig.canvas.draw_idle()
         plt.pause(0.001)

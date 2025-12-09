@@ -109,7 +109,6 @@ class CamReader(threading.Thread):
 
 class Video(Animation):
     instructions = {
-        "settings": ["color", "brightness", "background", "back_brightness", "confidence", "decay", "radius", "angle"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -131,6 +130,7 @@ class Video(Animation):
         },
         "angle": {"type": "int", "min": 0, "max": 360, "default": 150}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         self.num_leds = len(get_locations())

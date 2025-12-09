@@ -6,7 +6,7 @@
 # various animations on a strip of NeoPixels.
 
 import time, random
-import utils
+from . import utils
 import multiprocessing
 if utils.is_raspberrypi():
     from rpi_ws281x import PixelStrip  # pyright: ignore[reportMissingImports]

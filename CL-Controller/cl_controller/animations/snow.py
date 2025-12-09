@@ -66,7 +66,6 @@ def to_cartesian(r, phi):
 
 class Snow(Animation):
     instructions = {
-        "settings": ["color", "brightness", "background", "back_brightness", "speed", "speed_std", "radius", "randomness", "amount", "fade"],
         "color": {
             "type": "color",
             "default": "255,255,255",
@@ -115,6 +114,7 @@ class Snow(Animation):
             "default": 0.2
         }
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         global max_z

@@ -28,7 +28,6 @@ class Spiral:
 
 class Snake(Animation):
     instructions = {
-        "settings": ["color", "duration", "brightness", "radius", "inclination", "amount"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -45,6 +44,7 @@ class Snake(Animation):
         "inclination": {"type": "float", "min": 0.25, "max": 3, "default": 1.75},
         "amount": {"type": "int", "min": 1, "max": 10, "default": 4}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         global vert_step

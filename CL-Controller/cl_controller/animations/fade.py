@@ -5,7 +5,6 @@ import utils
 
 class Fade(Animation):
     instructions = {
-        "settings": ["duration", "brightness"],
         "duration": {
             "type": "float",
             "min": 1.5,
@@ -14,6 +13,7 @@ class Fade(Animation):
         },
         "brightness": {"type": "int", "min": 0, "max": 255, "default": 255}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         self.num_leds = len(get_locations())

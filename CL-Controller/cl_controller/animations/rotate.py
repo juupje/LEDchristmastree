@@ -5,7 +5,6 @@ import utils
 
 class Rotate(Animation):
     instructions = {
-        "settings": ["color", "duration", "brightness", "invert"],
         "color": {
             "type": "color",
             "default": "fixed",
@@ -20,6 +19,7 @@ class Rotate(Animation):
         "invert": {"type": "bool", "default": False},
         "brightness": {"type": "int", "min": 0, "max": 255, "default": 255},
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         """

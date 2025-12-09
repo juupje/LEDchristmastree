@@ -5,7 +5,6 @@ import utils
 
 class Sphere(Animation):
     instructions = {
-        "settings": ["color", "duration", "brightness", "invert"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -20,6 +19,7 @@ class Sphere(Animation):
         "invert": {"type": "bool", "default": False},
         "brightness": {"type": "int", "min": 0, "max": 255, "default": 255},
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         duration = max(1,kwargs.get("duration", 3))

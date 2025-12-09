@@ -14,7 +14,6 @@ def spiral(phase, radius=50, base_radius=95, height=height):
 
 class Spiral(Animation):
     instructions = {
-        "settings": ["color", "background", "duration", "brightness", "back_brightness", "radius", "inclination", "invert"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -37,6 +36,7 @@ class Spiral(Animation):
         "inclination": {"type": "float", "min": 0.25, "max": 3, "default": 1.75},
         "invert": {"type": "bool", "default": False}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         global vert_step
