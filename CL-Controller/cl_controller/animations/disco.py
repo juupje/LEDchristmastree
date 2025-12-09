@@ -1,5 +1,5 @@
 from time import sleep
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 

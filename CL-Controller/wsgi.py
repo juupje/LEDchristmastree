@@ -1,9 +1,8 @@
-from cl_controller import create_app
+from cl_controller.cl_controller import create_app
 import multiprocessing
-from  ws2811Controller import ws2811Controller
+from  cl_controller.ws2811Controller import ws2811Controller
 import logging, os, sys
 from datetime import datetime
-
 
 def main(*args, **kwargs):
     os.makedirs("logs", exist_ok=True)
@@ -18,5 +17,6 @@ def wsgi_on_starting(server):
     logging.debug("On Starting " + str(multiprocessing.current_process()))
 
 def wsgi_on_exit(server):
-    ws2811Controller._instance.stop()
+    if ws2811Controller._instance is not None:
+        ws2811Controller._instance.stop()
     logging.info("Exiting")

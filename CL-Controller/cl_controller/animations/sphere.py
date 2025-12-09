@@ -1,5 +1,5 @@
 from time import sleep
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 
@@ -40,7 +40,7 @@ class Sphere(Animation):
         self.step_size = (r_max-r_min)/(30*duration)
         #print("Stepsize", self.step_size)
         
-        self.color = utils.parseColorMode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255), is_odd_black_constant=True)
+        self.color = utils.parse_color_mode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255), is_odd_black_constant=True)
         if(self.color is None):
             print("Invalid color!")
             return {"success": False, "message": "Invalid color"}
@@ -75,7 +75,7 @@ class Sphere(Animation):
             loc += self.step_size
             changed = False
             while(idx<num_leds and self.check(self.r[idx],loc)):
-                self.strip.setPixelColor(int(self.order[idx]), self.color(loc, self.max_r, self.iteration))
+                self.strip.setPixelColor(int(self.order[idx]), self.color(loc, self.max_r, self.iteration))  # type: ignore
                 changed = True
                 idx += 1
             if(changed):

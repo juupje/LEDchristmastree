@@ -5,7 +5,7 @@ from ws2811Controller import ws2811Controller
 from animations import animations as anim
 import subprocess
 import logging
-import webcontroller
+import web.webcontroller as webcontroller
 import importlib
 import multiprocessing
 import threading
@@ -31,6 +31,10 @@ class LEDUtil():
 
     def get_controller(self):
         return self.controller
+    
+    @property
+    def leds(self):
+        return self.controller.leds
 
     def get(self, led_id):
         return self.controller.get(led_id)
@@ -217,7 +221,7 @@ def create_app(**kwargs):
                     return {"success": success, "message": stdout if success else stderr}
             return {"success": False, "message": "Unknown option"}
     try:
-        from preset_handler import preset_api as ns_preset, close, render_preset_template
+        from web.preset_handler import preset_api as ns_preset, close, render_preset_template
         api.add_namespace(ns_preset)
 
         @app.route("/presets")
