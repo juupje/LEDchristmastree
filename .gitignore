@@ -13,3 +13,4 @@ video_test/
 output.txt
 CL-Controller/logs/*.log
 *.log
+database.db
