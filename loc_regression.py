@@ -21,7 +21,7 @@ output = np.zeros((N, 3))
 
 def find_min(x):
     idx = 0
-    m = np.infty
+    m = np.inf
     for i in range(1,len(x)):
         if(x[i] < m and x[i]>=0):
             m = x[i]
@@ -42,7 +42,7 @@ def find_max(x):
 """ Hard coding end """
 
 zs = np.stack([locs[i,:,0] for i in range(len(locs))]).astype(np.float32)
-zs[zs==-1] = np.NaN
+zs[zs==-1] = np.nan
 
 print("All nan ids:", np.where(np.isnan(zs).all(axis=0))[0])
 
@@ -52,7 +52,7 @@ diff = np.abs(zs-z)
 indices_to_check = np.where(np.nansum(diff,axis=0)/N_steps>6)[0]
 
 diff = diff[:, indices_to_check]
-diff[np.isnan(diff)] = np.infty
+diff[np.isnan(diff)] = np.inf
 zs2 = zs.copy()
 zs2[np.isnan(zs2)] = 0 #these have 0 weight, so they won't be taken into account anyway
 z[indices_to_check] = np.average(zs2[:,indices_to_check],axis=0, weights=1/diff**2)
@@ -65,7 +65,7 @@ output[:, 2] = z
 #Preprocessing x,y fitting
 x = locs[:,:,1]
 #normalize x to [-1,1]
-x[x==-1] = np.NaN
+x[x==-1] = np.nan
 x /= w/2
 x -= 1
 print(np.nanmin(x), np.nanmax(x))

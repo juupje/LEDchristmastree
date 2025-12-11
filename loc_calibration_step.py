@@ -84,7 +84,7 @@ def mean_enclosing_circle(x):
     d = np.std(x,axis=0)
     return c, np.max(d)*1.5
 
-def process_image(img, ybox:tuple=None):
+def process_image(img, ybox: tuple | None=None):
     filtered = cv.bitwise_and(img, img, mask=cv.inRange(img, lower, upper))
     filtered = filtered.max(axis=2)
     binary = (filtered>200).astype(np.uint8)
@@ -109,11 +109,11 @@ def process_image(img, ybox:tuple=None):
                 best_circularity = circularity
                 best = i
     if(best is not None):
-        c, r = mean_enclosing_circle(clusters[i])
+        c, r = mean_enclosing_circle(clusters[best])
         return c, r, binary
     return None, None, binary
 
-def main(show:bool=True, rotation:int=0, leds:int=None, ybox:tuple=None, camera=0):
+def main(show:bool=True, rotation:int=0, leds: list[int] | None = None, ybox: tuple | None =None, camera=0):
     for x in ["raw", "filtered", "processed"]:
         os.makedirs(f"images/{x}/{rotation:d}", exist_ok=True)
 
@@ -167,7 +167,7 @@ def main(show:bool=True, rotation:int=0, leds:int=None, ybox:tuple=None, camera=
                 img = img[:, w//4:w//4*3, :]
                 copy = img.copy()
                 c, r, binary = process_image(img, ybox) #extract the largest roughly circular cluster
-                if(c is not None):
+                if(c is not None and r is not None):
                     locs[i] = c
                     cv.circle(copy, (int(c[1]), int(c[0])), int(r), (200,21,5), 2) #draw a circle around the led
                 binary[binary>0] = 255

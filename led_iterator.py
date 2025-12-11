@@ -108,7 +108,7 @@ def process_image(img):
                 best_circularity = circularity
                 best = i
     if(best is not None):
-        c, r = mean_enclosing_circle(clusters[i])
+        c, r = mean_enclosing_circle(clusters[best])
         return c, r, binary
     return None, None, binary
 
@@ -189,7 +189,7 @@ def loop(auto:bool=False, delay:int=1000, do_analysis:bool=False):
             cv.imshow("cam-raw", img)
             if(do_analysis):
                 c, r, binary = process_image(img) #extract the largest roughly circular cluster
-                if(c is not None):
+                if(c is not None and r is not None):
                     cv.circle(copy, (int(c[1]), int(c[0])), int(r), (200,21,5), 2) #draw a circle around the led
                 binary[binary>0] = 255
                 cv.imshow("cam-processed", copy)
