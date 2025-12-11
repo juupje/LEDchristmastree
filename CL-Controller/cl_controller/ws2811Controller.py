@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# NeoPixel library strandtest example
-# Author: Tony DiCola (tony@tonydicola.com)
-#
-# Direct port of the Arduino NeoPixel library strandtest example.  Showcases
-# various animations on a strip of NeoPixels.
-
 import time, random
 from . import utils
 import multiprocessing
@@ -20,7 +13,7 @@ else:
 Color = utils.Color
 
 SWITCH_PIN = 25 #GPIO in BCM channel
-SHUTDOWN_PIN = 23 #GPIO in BCM channel
+SHUTDOWN_PIN = 24 #GPIO in BCM channel
 
 class ws2811Controller:
     _instance = None
@@ -47,7 +40,11 @@ class ws2811Controller:
         self.has_begun = False
         self.trigger_times = {}
         self.leds = [{"id": i, "color": "255,255,255", "state": False, "brightness": 255} for i in range(num_leds)]
-        self.strip = PixelStrip(num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel)       
+        self.strip = PixelStrip(num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel)
+        if not utils.is_raspberrypi():
+            import numpy as np
+            from .mock import TreeVis
+            self.vis = TreeVis(self.strip, np.load("cl_controller/animations/locations.npy"))
     
     def setup_trigger(self, pin, callback, interval=2):
         #shutdown trigger
@@ -212,5 +209,6 @@ class ws2811Controller:
     def show(self):
         #print("Showing!")
         self.strip.show()
+
     def __str__(self):
         return f"ws2811Controller [{self.nonce}]"

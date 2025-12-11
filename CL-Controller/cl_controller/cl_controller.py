@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, request, redirect
+from flask import Flask, request, redirect
 from flask_restx import Api, Resource, fields
 from .ws2811Controller import ws2811Controller
 from .animations import animations as anim

@@ -1,6 +1,5 @@
 import logging
-from typing import Tuple, List, Callable
-logging.basicConfig(level=logging.DEBUG)
+from typing import List, Callable
 logger = logging.getLogger("PixelStrip")
 
 class PixelStrip:
