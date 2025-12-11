@@ -6,6 +6,7 @@ import json, datetime
 from animations.animations import AnimData
 import queue, threading
 import html
+from typing import Tuple, Any
 
 PRESET_TEMPLATE = "presets.html"
 DATABASE_PATH = "database.db"
@@ -42,7 +43,10 @@ class PresetAPI(Resource):
         self.model = model
 
     def _get_item(self, id) -> dict | None:
-        return get_database().execute("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=id), one=True)[0]
+        res, _ = get_database().execute("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=id), one=True)
+        if res is not None:
+            return res
+        return None
 
     @preset_api.marshal_with(model)
     def get(self, id):
@@ -58,6 +62,8 @@ class PresetAPI(Resource):
     def put(self, id):
         #update a preset
         item = self._get_item(id)
+        if item is None:
+            return {"success": False, "message": "Preset does not exist"}, 404
         try:
             assert item["animation"] == preset_api.payload["animation"], "Cannot change animation of preset."
             item.update(preset_api.payload)
@@ -92,10 +98,13 @@ class PresetAPI(Resource):
         if "name" in params:
             del params["name"]
         #verify that the paramters match the animation
-        animation = animdata.get(payload["animation"]).instructions["settings"]
-        if not all([param in params for param in animation]):
+        anim = animdata.get(payload["animation"])
+        if anim is None:
+            return "Invalid animation", 400
+        settings = anim.settings
+        if not all([param in params for param in settings]):
             return "Missing parameters", 400
-        if not all([param in animation for param in params]):
+        if not all([param in settings for param in params]):
             return "Invalid parameters", 400
         get_database().execute("INSERT INTO presets (name, animation, created_on, json) VALUES (:name, :animation, :created_on, :json)",
                     args=payload, commit=True)
@@ -125,7 +134,7 @@ def render_preset_template():
     #create preset table
     items, _ = get_database().execute("SELECT id, name, animation, created_on, json FROM presets")
     anims = {}
-    for item in items:
+    for item in items:  # type: ignore
         if item["animation"] not in anims:
             anims[item["animation"]] = []
         anims[item["animation"]].append(item)
@@ -158,7 +167,7 @@ class ThreadedDatabaseHandler:
         sq.register_adapter(datetime.datetime, lambda x: x.strftime("%Y-%m-%d %H:%M:%S"))
         sq.register_converter("DATE", lambda x: datetime.datetime.fromisoformat(x.decode()))
         sq.register_adapter(dict, lambda x: json.dumps(x, ensure_ascii=True))
-        sq.register_adapter("JSON", lambda x: json.loads(x))
+        sq.register_adapter("JSON", lambda x: json.loads(x))  # type: ignore
         if not os.path.isfile(DATABASE_PATH):
             print("!!! Creating database !!!")
             con = sq.connect(DATABASE_PATH, detect_types=sq.PARSE_DECLTYPES)
@@ -195,7 +204,7 @@ class ThreadedDatabaseHandler:
             cur.close()
         con.close()
     
-    def execute(self, query:str,args:tuple=None, one:bool=False, commit:bool=False) -> list|None:
+    def execute(self, query: str, args: sq._Parameters | None = None, one: bool = False, commit: bool = False) -> Tuple[Any | None, int]:
         args = args or ()
         res_queue = queue.Queue(1)
         self.query_queue.put((query, args, one, commit, res_queue))

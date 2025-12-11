@@ -1,11 +1,10 @@
 from time import sleep
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 
 class Rotate(Animation):
     instructions = {
-        "settings": ["color", "duration", "brightness", "invert"],
         "color": {
             "type": "color",
             "default": "fixed",
@@ -20,6 +19,7 @@ class Rotate(Animation):
         "invert": {"type": "bool", "default": False},
         "brightness": {"type": "int", "min": 0, "max": 255, "default": 255},
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         """
@@ -36,7 +36,7 @@ class Rotate(Animation):
         #we want 30fp, travel up in [duration] number of seconds: step_size = distance/#steps
         self.step_size = 2*np.pi/(30*duration)
         
-        self.color = utils.parseColorMode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255), is_odd_black_constant=True) #get the color mode as a lambda, call with self.color(location, max_location, iteration)
+        self.color = utils.parse_color_mode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255), is_odd_black_constant=True) #get the color mode as a lambda, call with self.color(location, max_location, iteration)
         if(self.color is None):
             print("Invalid color!")
             return {"success": False, "message": "Invalid color"}
@@ -75,7 +75,7 @@ class Rotate(Animation):
             changed = False #set to true if at least one led changed.
             while(idx<num_leds and self.check(self.angles[idx],loc)):
                 #while the next led in the order is less than the current angle, activate that led
-                self.strip.setPixelColor(int(self.order[idx]), self.color(loc, pi2, self.iteration))
+                self.strip.setPixelColor(int(self.order[idx]), self.color(loc, pi2, self.iteration))  # type: ignore
                 changed = True
                 idx += 1
             if(changed):

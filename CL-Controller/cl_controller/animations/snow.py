@@ -1,4 +1,4 @@
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 from time import sleep
@@ -11,7 +11,7 @@ class LEDState:
         self.set_color(color, fade)
     
     def set_color(self, color, fade=0):
-        (self.r, self.g, self.b) = utils.colorToRGB(color)
+        (self.r, self.g, self.b) = utils.color_to_rgb(color)
         self.fade = fade
         self.time = 0
         self.fading = fade>0
@@ -66,7 +66,6 @@ def to_cartesian(r, phi):
 
 class Snow(Animation):
     instructions = {
-        "settings": ["color", "brightness", "background", "back_brightness", "speed", "speed_std", "radius", "randomness", "amount", "fade"],
         "color": {
             "type": "color",
             "default": "255,255,255",
@@ -115,6 +114,7 @@ class Snow(Animation):
             "default": 0.2
         }
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         global max_z
@@ -133,12 +133,12 @@ class Snow(Animation):
         self.bottom = np.min(z)-2*self.radius
         #we want 30fp, travel up in [duration] number of seconds: step_size = distance/#steps
         
-        self.color = utils.parseColorMode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255))
+        self.color = utils.parse_color_mode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255))
         if(self.color is None):
             print("Invalid color!")
             return {"success": False, "message": "Invalid color"}
 
-        self.background = utils.parseColor(kwargs.get("background", "255,0,0"), brightness=kwargs.get("back_brightness", 255))
+        self.background = utils.parse_color(kwargs.get("background", "255,0,0"), brightness=kwargs.get("back_brightness", 255))
 
         #self.locs = (z, phi, r)
         self._is_setup = True

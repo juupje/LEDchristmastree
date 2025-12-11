@@ -1,5 +1,5 @@
 import time
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 import queue
@@ -109,7 +109,6 @@ class CamReader(threading.Thread):
 
 class Video(Animation):
     instructions = {
-        "settings": ["color", "brightness", "background", "back_brightness", "confidence", "decay", "radius", "angle"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -131,6 +130,7 @@ class Video(Animation):
         },
         "angle": {"type": "int", "min": 0, "max": 360, "default": 150}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         self.num_leds = len(get_locations())
@@ -139,16 +139,16 @@ class Video(Animation):
         self.radius = kwargs.get("radius", 33)
         c = kwargs.get("color", "255,0,0")
         self.brightness = max(0,min(255,kwargs.get("brightness", 255)))
-        self.color = utils.parseColorMode(c, brightness=self.brightness)
+        self.color = utils.parse_color_mode(c, brightness=self.brightness)
         if(self.color is None):
             print("Invalid color!")
             return {"success": False, "message": "Invalid color"}
         
         if(c != "rainbow"):
-            self.background = utils.parseColorMode(kwargs.get("background", "255,0,0"),
+            self.background = utils.parse_color_mode(kwargs.get("background", "255,0,0"),
                                     brightness=max(0,min(255,kwargs.get("back_brightness", 255))))
         else:
-            self.background = utils.parseColorMode(c,
+            self.background = utils.parse_color_mode(c,
                                     brightness=max(0,min(255,kwargs.get("back_brightness", 255))))
         
         self._is_setup = True

@@ -1,5 +1,5 @@
 from time import sleep
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 from hashlib import sha1
 import utils, os
@@ -24,7 +24,7 @@ def calculate_geodesic_dists(X, kth:int):
     E = D<epsilon #binary matrix connecting nodes with distance < epsilon
     
     #Now, find the shortest path from every LED to every LED through using the edges in E
-    G = np.full_like(D, np.infty)
+    G = np.full_like(D, np.inf)
     P = np.full(D.shape,-1,dtype=np.int16)
     n = G.shape[0]
     for k in range(n):
@@ -58,9 +58,9 @@ class Geodesic(Animation):
             "default": 3,
         },
         "k-parameter": {"type": "int", "min": 6, "max": 20, "default": 8},
-        "brightness": {"type": "int", "min": 0, "max": 255, "default": 255},
+        "brightness": {"type": "int", "min": 0, "max": 255, "default": 255}
     }
-    instructions["settings"] = list(instructions.keys())
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         """
@@ -68,7 +68,7 @@ class Geodesic(Animation):
         """
         self.duration = max(1,kwargs.get("duration", 3)) #duration of one loop in seconds
         self.invert = kwargs.get("invert", False) #play the animation back-to-front if true
-        self.color = utils.parseColorMode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255), is_odd_black_constant=True) #get the color mode as a lambda, call with self.color(location, max_location, iteration)
+        self.color = utils.parse_color_mode(kwargs.get("color", "255,0,0"), brightness=kwargs.get("brightness", 255), is_odd_black_constant=True) #get the color mode as a lambda, call with self.color(location, max_location, iteration)
         if(self.color is None):
             print("Invalid color!")
             return {"success": False, "message": "Invalid color"}
@@ -77,7 +77,7 @@ class Geodesic(Animation):
         try:
             self.D = calculate_geodesic_dists(get_locations(), kth=kwargs.get("k-parameter", 8))
         except Exception as e:
-            print(e.with_traceback())
+            print(e)
             return {"success": False, "message": str(e)}
         
         self.iteration = 0
@@ -97,7 +97,7 @@ class Geodesic(Animation):
             start_loc = randint(0,num_leds-1)
             dists = self.D[start_loc]
             order = np.argsort(dists)
-            max_dist = np.max(dists[dists<np.infty])
+            max_dist = np.max(dists[dists<np.inf])
             step_size = max_dist/(30*self.duration)
             current_dist = 0
             return current_dist, dists[order], max_dist, step_size, order
@@ -109,7 +109,7 @@ class Geodesic(Animation):
             changed = False #set to true if at least one led changed.
             while(idx<num_leds and dists[idx] <= current_dist):
                 #while the next led in the order is less than the current angle, activate that led
-                self.strip.setPixelColor(int(order[idx]), self.color(current_dist, max_dist, self.iteration))
+                self.strip.setPixelColor(int(order[idx]), self.color(current_dist, max_dist, self.iteration)) # type: ignore
                 changed = True
                 idx += 1
             if(changed):

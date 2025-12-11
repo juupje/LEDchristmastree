@@ -1,4 +1,4 @@
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 from time import sleep
@@ -28,7 +28,6 @@ class Spiral:
 
 class Snake(Animation):
     instructions = {
-        "settings": ["color", "duration", "brightness", "radius", "inclination", "amount"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -45,6 +44,7 @@ class Snake(Animation):
         "inclination": {"type": "float", "min": 0.25, "max": 3, "default": 1.75},
         "amount": {"type": "int", "min": 1, "max": 10, "default": 4}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         global vert_step
@@ -59,10 +59,10 @@ class Snake(Animation):
             self.background = "chase"
             self.phase = np.arctan2(self.locations[:,1], self.locations[:,0])
         else:
-            self.background = utils.parseColor(kwargs.get("background", "0,0,0"), kwargs.get("back_brightness", 255))
+            self.background = utils.parse_color(kwargs.get("background", "0,0,0"), kwargs.get("back_brightness", 255))
         self.radius = kwargs.get("radius", 50)
         
-        self.color = utils.parseColorMode("fixed", kwargs.get("brightness", 255))
+        self.color = utils.parse_color_mode("fixed", kwargs.get("brightness", 255))
 
         self.max_z = np.max(self.locations[:,2])
         self.max_phi = (self.max_z/(vert_step*self.radius))*np.pi*2

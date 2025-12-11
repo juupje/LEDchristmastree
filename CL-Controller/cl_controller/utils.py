@@ -4,17 +4,17 @@ import numpy as np
 
 regex = r"^\d{1,3},\d{1,3},\d{1,3}$"
 
-def Color(r, g, b):
+def Color(r: int, g: int, b: int) -> int:
     #interchange red and green
     return (b << 16) | (r << 8) | g
 
-def Color_array(r,g,b):
+def Color_array(r: np.ndarray, g: np.ndarray, b: np.ndarray) -> np.ndarray:
     b = np.left_shift(b.astype(int), 16)
     r = np.left_shift(r.astype(int), 8)
     g = g.astype(int)
     return np.bitwise_or(np.bitwise_or(b, r), g)
 
-def color_brightness(r,g,b,brightness=255):
+def color_brightness(r: int, g: int, b: int, brightness: int = 255) -> int:
     #maximize brightness first, then scale it
     f = max(r,g,b)
     if(f == 0):
@@ -22,10 +22,10 @@ def color_brightness(r,g,b,brightness=255):
     f = brightness/f
     return Color(int(r*f), int(g*f), int(b*f))
 
-def colorToRGB(color):
+def color_to_rgb(color: int) -> tuple[int, int, int]:
     return (color >> 8 & 0xff, color & 0xff, color >> 16)
 
-def parseColor(color, brightness=255):
+def parse_color(color: str, brightness: int = 255) -> int:
     if(search(regex, color)):
         colors = color.split(',')
         r = clamp(int(colors[0]), 0, 255)
@@ -34,7 +34,7 @@ def parseColor(color, brightness=255):
         return color_brightness(r, g, b, brightness)
     return Color(0,0,0)
 
-def to_double_digit_hex(i):
+def to_double_digit_hex(i: int) -> str:
     s = hex(i)[2:].rstrip("L")
     if(len(s)==1):
         return "0"+s
@@ -42,7 +42,7 @@ def to_double_digit_hex(i):
         return "00"
     return s
 
-def rgb_to_hex(color):
+def rgb_to_hex(color: str) -> str:
     if(search(regex, color)):
         colors = color.split(",")
         r = clamp(int(colors[0]), 0, 255)
@@ -51,13 +51,13 @@ def rgb_to_hex(color):
         return "#"+to_double_digit_hex(r) + to_double_digit_hex(g) + to_double_digit_hex(b)
     return "#000000"
 
-def adjustBrightness(color, brightness):
+def adjustBrightness(color: int, brightness: int) -> int:
     brightness = clamp(brightness, 0, 255)
-    r,g,b = colorToRGB(color)
+    r,g,b = color_to_rgb(color)
     f = brightness/255
     return Color(min(255,int(r*f)), min(255, int(g*f)), min(255, int(b*f)))
 
-def parseColorMode(mode, brightness=255, is_odd_black=False, is_odd_black_constant=False):
+def parse_color_mode(mode: str, brightness: int = 255, is_odd_black: bool = False, is_odd_black_constant: bool = False):
     if(mode=="rainbow"):
         if(is_odd_black):
             return lambda x, max_x, i: wheel(int(x/max_x*100+i*100)%255, brightness) if i%2==0 else 0
@@ -66,22 +66,22 @@ def parseColorMode(mode, brightness=255, is_odd_black=False, is_odd_black_consta
         if(is_odd_black):
             return lambda x, max_x, i: wheel(((i+1)*40)%255, brightness) if i%2==0 else 0
         return lambda x, max_x, i: wheel(((i+1)*40)%255, brightness)
-    elif(parseColor(mode)>0):
-        color = parseColor(mode, brightness)
+    elif(parse_color(mode)>0):
+        color = parse_color(mode, brightness)
         if(is_odd_black_constant):
             return lambda x, max_x, i: color if i%2==0 else 0
         return lambda x, max_x, i: color
     else:
         return None
 
-def hsv_to_rgb(h, s, v):
+def hsv_to_rgb(h: float, s: float, v: float) -> tuple[int, int, int]:
     """
     h: hue, in degrees
     s: saturation, from 0 to 1
     v: value, from 0 to 1
     """
     if(s <= 0):
-        return v, v, v
+        return int(v*255), int(v*255), int(v*255)
     if(h >= 360):
         h = 0
     h /= 60.
@@ -111,7 +111,7 @@ def rgb_to_hsv(r, g, b):
     b /= 255
     min_value = min(r, g, b)
     max_value = max(r, g, b)
-    h, s = 0
+    h, s = 0, 0
     v = max_value
     delta = max_value - min_value
     if(delta < 1e-5):

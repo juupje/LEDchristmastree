@@ -1,6 +1,8 @@
 import threading
 import numpy as np
 import importlib
+from abc import abstractmethod
+from typing import List
 
 info = {
     "fade": {
@@ -83,60 +85,63 @@ class AnimData:
             pass#self.names.remove("camera")
         self.info = {k: v for k,v in info.items() if k in self.names}
 
-    def get(self,name):
+    def get(self,name: str) -> type['Animation'] | None:
         if(name=="sweep_vert"):
-            from animations import sweep
+            from . import sweep
             return sweep.Sweep_Vertical
         elif(name=="sweep_horiz"):
-            from animations import sweep
+            from . import sweep
             return sweep.Sweep_Horizontal
         elif(name=="rotate"):
-            from animations import rotate
+            from . import rotate
             return rotate.Rotate
         elif(name=="spiral"):
-            from animations import spiral
+            from . import spiral
             return spiral.Spiral
         elif(name=="sphere"):
-            from animations import sphere
+            from . import sphere
             return sphere.Sphere
         elif(name=="snow"):
-            from animations import snow
+            from . import snow
             return snow.Snow
         elif(name=="snake"):
-            from animations import snake
+            from . import snake
             return snake.Snake
         elif(name=="disco"):
-            from animations import disco
+            from . import disco
             return disco.Disco
         elif(name=="fade"):
-            from animations import fade
+            from . import fade
             return fade.Fade
         elif(name=="disks"):
-            from animations import disks
+            from . import disks
             return disks.Disks
         elif(name=="music"):
-            from animations import music
+            from . import music
             return music.Music
         elif(name=="geodesic"):
-            from animations import geodesic
+            from . import geodesic
             importlib.reload(geodesic)
             return geodesic.Geodesic
         elif(name=="camera"):
-            from animations import video
+            from . import video
             importlib.reload(video)
             return video.Video
         else:
             return None
 
 class Animation(threading.Thread):
+    instructions: dict = {}
+    settings: List[str] = []
+    
     def __init__(self):
         super(Animation, self).__init__()
         self.daemon = True
         self._is_setup = False
         self._stop_event = threading.Event()
     
-    def setup(self):
-        self._is_setup = True
+    @abstractmethod
+    def setup(self, **kwargs) -> dict: ...
 
     #should not be overriden
     def play(self,strip):

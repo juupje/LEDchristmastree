@@ -1,26 +1,19 @@
-#!/usr/bin/env python3
-# NeoPixel library strandtest example
-# Author: Tony DiCola (tony@tonydicola.com)
-#
-# Direct port of the Arduino NeoPixel library strandtest example.  Showcases
-# various animations on a strip of NeoPixels.
-
 import time, random
-import utils
+from . import utils
 import multiprocessing
 if utils.is_raspberrypi():
-    from rpi_ws281x import PixelStrip
-    import RPi.GPIO as GPIO
+    from rpi_ws281x import PixelStrip  # pyright: ignore[reportMissingImports]
+    import RPi.GPIO as GPIO  # pyright: ignore[reportMissingModuleSource]
     GPIO.setmode(GPIO.BCM)
 else:
     print("Using mock GPIO!")
-    from mock import PixelStrip
-    from mock import GPIO
+    from .mock import PixelStrip
+    from .mock import GPIO
     
 Color = utils.Color
 
 SWITCH_PIN = 25 #GPIO in BCM channel
-SHUTDOWN_PIN = 23 #GPIO in BCM channel
+SHUTDOWN_PIN = 24 #GPIO in BCM channel
 
 class ws2811Controller:
     _instance = None
@@ -47,7 +40,11 @@ class ws2811Controller:
         self.has_begun = False
         self.trigger_times = {}
         self.leds = [{"id": i, "color": "255,255,255", "state": False, "brightness": 255} for i in range(num_leds)]
-        self.strip = PixelStrip(num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel)       
+        self.strip = PixelStrip(num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel)
+        if not utils.is_raspberrypi():
+            import numpy as np
+            from .mock import TreeVis
+            self.vis = TreeVis(self.strip, np.load("cl_controller/animations/locations.npy"))
     
     def setup_trigger(self, pin, callback, interval=2):
         #shutdown trigger
@@ -119,27 +116,29 @@ class ws2811Controller:
         self.stop_animation()
         led_id = instruction["id"]
         if(instruction["state"]):
-            self.get(led_id).update(instruction)
-            color = utils.parseColor(instruction["color"], instruction["brightness"])
+            led = self.get(led_id)
+            if led is not None: led.update(instruction)
+            color = utils.parse_color(instruction["color"], instruction["brightness"])
             self.strip.setPixelColor(led_id, color)
         else:
-            self.get(led_id).update({"state": False, "color": "0,0,0", "brightness": 0})
+            led = self.get(led_id)
+            if led is not None: led.update({"state": False, "color": "0,0,0", "brightness": 0})
             self.strip.setPixelColor(led_id, utils.Color(0,0,0))
         if(show):
             self.show()
         return True
 
-    def uniform_color(self, color):
+    def uniform_color(self, color: list | tuple | str | int):
         if not self.on:
             self.turn_on()
         self.stop_animation()
-        if(isinstance(color, (list, type))):
+        if(isinstance(color, (list, tuple))):
             if(len(color)==3):
                 color = Color(*color)
             else:
                 raise ValueError("Invalid color: ", color)
         elif(type(color)==str):
-            color = utils.parseColor(color, 255)
+            color = utils.parse_color(color, 255)
         elif(type(color) is not int):
             raise ValueError("Invalid color", color)
 
@@ -210,5 +209,6 @@ class ws2811Controller:
     def show(self):
         #print("Showing!")
         self.strip.show()
+
     def __str__(self):
         return f"ws2811Controller [{self.nonce}]"

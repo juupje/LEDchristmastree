@@ -1,11 +1,10 @@
 from time import sleep
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 
 class Disco(Animation):
     instructions = {
-        "settings": ["color", "duration", "min_brightness", "max_brightness"],
         "color": {
             "type": "list",
             "options": ["fixed", "random"],
@@ -20,6 +19,7 @@ class Disco(Animation):
         "min_brightness": {"type": "int", "min": 0, "max": 255, "default": 0},
         "max_brightness": {"type": "int", "min": 0, "max": 255, "default": 255}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         self.num_leds = len(get_locations())

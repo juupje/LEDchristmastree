@@ -1,4 +1,4 @@
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
 import utils
 from time import sleep
@@ -14,7 +14,6 @@ def spiral(phase, radius=50, base_radius=95, height=height):
 
 class Spiral(Animation):
     instructions = {
-        "settings": ["color", "background", "duration", "brightness", "back_brightness", "radius", "inclination", "invert"],
         "color": {
             "type": "color",
             "default": "255,0,0",
@@ -37,6 +36,7 @@ class Spiral(Animation):
         "inclination": {"type": "float", "min": 0.25, "max": 3, "default": 1.75},
         "invert": {"type": "bool", "default": False}
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         global vert_step
@@ -51,10 +51,10 @@ class Spiral(Animation):
             self.background = "chase"
             self.phase = np.arctan2(self.locations[:,1], self.locations[:,0])
         else:
-            self.background = utils.parseColor(kwargs.get("background", "0,0,0"), kwargs.get("back_brightness", 255))
+            self.background = utils.parse_color(kwargs.get("background", "0,0,0"), kwargs.get("back_brightness", 255))
         self.radius = kwargs.get("radius", 50)
         
-        self.color = utils.parseColorMode(kwargs.get("color", "fixed"), kwargs.get("brightness", 255))
+        self.color = utils.parse_color_mode(kwargs.get("color", "fixed"), kwargs.get("brightness", 255))
         if(self.color is None):
             print("Invalid color")
             return {"success": False, "message": "Invalid color"}
@@ -86,7 +86,7 @@ class Spiral(Animation):
             while not self._stop_event.is_set():
                 phi += self.step_size
                 loc = spiral(phi, radius=self.radius)
-                color = self.color(phi, self.max_phi, self.iteration)
+                color = self.color(phi, self.max_phi, self.iteration)  # type: ignore
                 for i in range(num_leds):
                     d = np.linalg.norm(loc-self.locations[i])
                     if(d < self.radius):
@@ -101,7 +101,7 @@ class Spiral(Animation):
             while not self._stop_event.is_set():
                 phi += self.step_size
                 loc = spiral(phi, radius=self.radius)
-                color = self.color(phi, self.max_phi, self.iteration)
+                color = self.color(phi, self.max_phi, self.iteration)  # type: ignore
                 for i in range(num_leds):
                     d = np.linalg.norm(loc-self.locations[i])
                     if(d>self.radius*1.5):

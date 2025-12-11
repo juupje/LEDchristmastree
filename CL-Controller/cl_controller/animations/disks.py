@@ -5,7 +5,6 @@ import utils
 
 class Disks(Animation):
     instructions = {
-        "settings": ["config", "number", "brightness"],
         "config": {
             "type": "list",
             "options": ["rings", "stripes"],
@@ -19,6 +18,7 @@ class Disks(Animation):
         },
         "brightness": {"type": "int", "min": 0, "max": 255, "default": 255},
     }
+    settings = list(instructions.keys())
 
     def setup(self, **kwargs):
         """

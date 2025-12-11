@@ -1,7 +1,7 @@
 from flask import render_template
 import subprocess
-import utils
-from animations import animations as anim
+import cl_controller.utils as utils
+from cl_controller.animations import animations as anim
 import json, html
 
 animdata = None
@@ -129,7 +129,7 @@ def create_tables():
     table_controller += "<p><button id='restart' onclick='rpi_command(\"option\",\"restart\", \"/api/rpi/\");'>Restart</button></p></div>\n"
     return dict(table_leds=table_leds_html, table_animaties=table_animation, table_controller=table_controller, script=script)
 
-def create_animation_page(anim_name:str, preset:int=None):
+def create_animation_page(anim_name:str, preset: int | None = None):
     def calculate_step(low, high):
         d = high-low
         if (d < 1):
@@ -166,7 +166,7 @@ def create_animation_page(anim_name:str, preset:int=None):
             settings.add_list(display_name, name, options=setting["options"], default=setting["default"])
     
     animation = animdata.get(anim_name) if animdata is not None else None
-    if(animation is None):
+    if(animation is None or animdata is None):
         return dict(animation_name="Unknown animation. <a href='/home'>Go back</a>", script="", settings="")
     settings = Element("settings_table", "/api/anim/")
     settings.add_hidden("name", value=anim_name)
@@ -180,8 +180,11 @@ def create_animation_page(anim_name:str, preset:int=None):
             preset = int(preset)
             from preset_handler import ThreadedDatabaseHandler, DATABASE_PATH
             handler = ThreadedDatabaseHandler(DATABASE_PATH)
-            preset_result, _ = handler.execute("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=preset), one=True)
+            preset_result, _ = handler.execute("SELECT id, name, animation, created_on, json FROM presets WHERE id=(:id)", args=dict(id=preset), one=True)  # type: ignore
             print("Loading preset:", preset_result)
+            if preset_result is None:
+                print(f"Could not find preset with ID {preset}!")
+                raise Exception("Preset not found")
             if preset_result["animation"] != anim_name:
                 print(f"Preset for {preset_result['animation']} does not match the animation ({anim_name})!")
                 preset_result = None
@@ -193,21 +196,21 @@ def create_animation_page(anim_name:str, preset:int=None):
         if type(preset_result["json"]) is str:
             preset_result["json"] = json.loads(preset_result["json"])
         for key in preset_result["json"]:
-            if key in instructions["settings"]:
+            if key in animation.settings:
                 instructions[key]["default"] = preset_result["json"][key]
 
-    for key in instructions["settings"]:
+    for key in animation.settings:
         setting = instructions[key]
         create_setting(key,setting)
     settings.add_button("Save preset", "save_preset", f"save_preset(null, \"{anim_name}\", parse_data());")
     return dict(animation_name=animdata.info[anim_name]["name"], script="<script>\n"+settings.get_script()+"</script>\n", settings=settings.create_table())
 
-def render_webpage(animation:str=None, preset:int=None):
+def render_webpage(animation: str | None = None, preset: int | None = None):
     global animdata
     if animdata is None:
         animdata = anim.AnimData()
     if(animation is None):
         return render_template(MAIN_TEMPLATE, **create_tables())
     else:
-        return render_template(ANIM_TEMPLATE, **create_animation_page(animation,preset))
+        return render_template(ANIM_TEMPLATE, **create_animation_page(animation, preset))
 
