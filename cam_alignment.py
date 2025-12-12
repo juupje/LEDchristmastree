@@ -64,6 +64,6 @@ def simple(cam_id=0):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cam", "-c", help="Camera ID", default=0)
+    parser.add_argument("--cam", "-c", help="Camera ID", default=0, type=int)
     args = vars(parser.parse_args())
     simple(args["cam"])
