@@ -116,7 +116,7 @@ def create_tables():
     table_leds_html = table_leds.create_table()
     script = "<script>\n" + table_leds.get_script() + "</script>\n"
 
-    table_animation = "<h4 style='text-align:center'><a onclick='stop_animation()' href=''>Stop animation</a></h4>"
+    table_animation = "<h4 style='text-align:center'><a onclick='stop_animation()' href='#'>Stop animation</a></h4>"
     table_animation += "<ul id='anim_list'>"
     #get animations info
     if(animdata):

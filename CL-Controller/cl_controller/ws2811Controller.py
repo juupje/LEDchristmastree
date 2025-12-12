@@ -12,9 +12,6 @@ else:
     
 Color = utils.Color
 
-SWITCH_PIN = 25 #GPIO in BCM channel
-SHUTDOWN_PIN = 24 #GPIO in BCM channel
-
 class ws2811Controller:
     _instance = None
     _lock = multiprocessing.Lock()
@@ -31,11 +28,12 @@ class ws2811Controller:
             cls._lock.release()
         return cls._instance
 
-    def initialize(self, num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel):
-        GPIO.setup(SWITCH_PIN, GPIO.OUT)
+    def initialize(self, num_leds, led_pin, led_freq, led_dma, led_invert, led_brightness, led_channel, switch_pin):
+        self.switch_pin = switch_pin
+        GPIO.setup(switch_pin, GPIO.OUT)
         self.on = False
         self.animation = None
-        GPIO.output(SWITCH_PIN, GPIO.LOW)
+        GPIO.output(switch_pin, GPIO.LOW)
         self.nonce = random.randint(0,2**15-1)
         self.has_begun = False
         self.trigger_times = {}
@@ -44,7 +42,7 @@ class ws2811Controller:
         if not utils.is_raspberrypi():
             import numpy as np
             from .mock import TreeVis
-            self.vis = TreeVis(self.strip, np.load("cl_controller/animations/locations.npy"))
+            self.vis = TreeVis(self.strip, np.load("cl_controller/animations/locations.npy"))  # type: ignore
     
     def setup_trigger(self, pin, callback, interval=2):
         #shutdown trigger
@@ -72,8 +70,8 @@ class ws2811Controller:
     def stop(self):
         print("Ending ws2811Controller")
         self.stop_animation()
-        GPIO.output(SWITCH_PIN, GPIO.LOW)
-        GPIO.setup(SWITCH_PIN, GPIO.IN)
+        GPIO.output(self.switch_pin, GPIO.LOW)
+        GPIO.setup(self.switch_pin, GPIO.IN)
         GPIO.cleanup()
 
     def __del__(self):
@@ -85,12 +83,12 @@ class ws2811Controller:
                 return led
 
     def turn_on(self):
-        GPIO.output(SWITCH_PIN, GPIO.HIGH)
+        GPIO.output(self.switch_pin, GPIO.HIGH)
         self.on = True
 
     def turn_off(self):
         self.stop_animation()
-        GPIO.output(SWITCH_PIN, GPIO.LOW)
+        GPIO.output(self.switch_pin, GPIO.LOW)
         self.on = False
 
     def update_all(self, instructions, show=False):

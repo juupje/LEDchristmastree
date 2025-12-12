@@ -1,9 +1,9 @@
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 from time import time
 from dancypi.visualization import Visualizer
 import dancypi.config as config
 import numpy as np
-import utils
+import cl_controller.utils as utils
 
 options = ["scroll", "energy", "spectrum"]
 class Music(Animation):

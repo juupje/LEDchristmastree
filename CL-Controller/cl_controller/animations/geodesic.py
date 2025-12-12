@@ -1,9 +1,10 @@
 from time import sleep
-from .animations import Animation, get_locations
 import numpy as np
 from hashlib import sha1
-import utils, os
+import os
 from random import randint
+from .animations import Animation, get_locations
+import cl_controller.utils as utils
 
 def calculate_geodesic_dists(X, kth:int):
     cache_file = f"animations/geodesic_dists-{kth}.npz"

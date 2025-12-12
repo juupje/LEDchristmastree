@@ -11,6 +11,7 @@ import multiprocessing
 import threading
 import requests
 import time
+import os
 
 # LED strip configuration:
 LED_COUNT = 100        # Number of LED pixels.
@@ -21,11 +22,12 @@ LED_BRIGHTNESS = 255  # Set to 0 for darkest and 255 for brightest
 LED_INVERT = False    # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
-SHUTDOWN_PIN = 23
+SWITCH_PIN = 23     #GPIO in BCM channel
+SHUTDOWN_PIN = 3
 
 class LEDUtil():
     def __init__(self, *args, **kwargs):
-        self.controller = ws2811Controller(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+        self.controller = ws2811Controller(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL, SWITCH_PIN)
         logging.info("Initialized controller:"+str(self.controller))
         self.controller.begin()
 
@@ -76,7 +78,9 @@ def create_app(**kwargs):
     logging.debug("Starting")
     animdata = anim.AnimData(**kwargs)
     led_util = LEDUtil()
-    app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    print("Using root path", root_path)
+    app = Flask(__name__, root_path=root_path, template_folder='assets/templates', static_folder='assets/static')
 
     @app.route('/')
     def home():
@@ -250,7 +254,9 @@ def create_app(**kwargs):
         requests.post("http://localhost/api/rpi", json={"option": "shutdown"})
         time.sleep(3)
     
+    print("Setting up shutdown trigger")
     led_util.get_controller().setup_trigger(SHUTDOWN_PIN, button_shutdown)
+    print("Shutdown trigger set up")
     return app
 
 if __name__=="__main__":

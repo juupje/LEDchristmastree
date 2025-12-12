@@ -3,7 +3,7 @@ from flask_restx import Api, fields, Resource, Namespace, marshal
 import sqlite3 as sq
 import os
 import json, datetime
-from animations.animations import AnimData
+from cl_controller.animations.animations import AnimData
 import queue, threading
 import html
 from typing import Tuple, Any
@@ -204,7 +204,7 @@ class ThreadedDatabaseHandler:
             cur.close()
         con.close()
     
-    def execute(self, query: str, args: sq._Parameters | None = None, one: bool = False, commit: bool = False) -> Tuple[Any | None, int]:
+    def execute(self, query: str, args: dict | list | tuple | None = None, one: bool = False, commit: bool = False) -> Tuple[Any | None, int]:
         args = args or ()
         res_queue = queue.Queue(1)
         self.query_queue.put((query, args, one, commit, res_queue))

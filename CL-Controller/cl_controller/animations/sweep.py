@@ -1,6 +1,6 @@
-from animations.animations import Animation, get_locations
+from .animations import Animation, get_locations
 import numpy as np
-import utils
+import cl_controller.utils as utils
 from time import sleep
 
 class Sweep(Animation):
